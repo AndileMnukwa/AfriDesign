@@ -57,6 +57,8 @@ All colors MUST be HSL.
     --terracotta: 20 55% 55%;
     --ochre: 39 67% 69%;
     --forest-green: 142 43% 23%;
+    --warm-beige: 35 25% 85%;
+    --deep-purple: 270 30% 25%;
   }
 
   .dark {
@@ -112,6 +114,18 @@ All colors MUST be HSL.
   .gradient-warm {
     background: linear-gradient(135deg, hsl(var(--terracotta)) 0%, hsl(var(--ochre)) 50%, hsl(var(--gold-prosperity)) 100%);
   }
+
+  .gradient-sunset {
+    background: linear-gradient(135deg, hsl(var(--orange-sunset)) 0%, hsl(var(--gold-prosperity)) 100%);
+  }
+
+  .gradient-earth {
+    background: linear-gradient(135deg, hsl(var(--terracotta)) 0%, hsl(var(--red-earth)) 100%);
+  }
+
+  .gradient-heritage {
+    background: linear-gradient(135deg, hsl(var(--forest-green)) 0%, hsl(var(--green-nature)) 50%, hsl(var(--ochre)) 100%);
+  }
   
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--orange-sunset)), hsl(var(--gold-prosperity)));
@@ -126,6 +140,13 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .text-heritage-gradient {
+    background: linear-gradient(135deg, hsl(var(--forest-green)), hsl(var(--green-nature)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   
   .rounded-african {
     border-radius: 1.5rem;
@@ -134,5 +155,12 @@ All colors MUST be HSL.
   .shadow-african {
     box-shadow: 0 10px 30px -10px hsla(var(--orange-sunset), 0.3);
   }
+
+  .shadow-warm {
+    box-shadow: 0 8px 25px -8px hsla(var(--terracotta), 0.25);
+  }
+
+  .shadow-heritage {
+    box-shadow: 0 12px 35px -12px hsla(var(--forest-green), 0.2);
+  }
 }
-</lov-code>
