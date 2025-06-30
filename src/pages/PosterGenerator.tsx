@@ -9,9 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Sparkles, Wand2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PosterGenerator = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     businessName: "",
     businessType: "",
@@ -36,24 +39,64 @@ const PosterGenerator = () => {
 
     setIsGenerating(true);
     
-    // Simulate AI generation (in real app, this would call Claude AI)
-    setTimeout(() => {
-      setIsGenerating(false);
-      toast.success("Poster content generated successfully!");
+    try {
+      // Call the AI generation edge function
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          type: 'poster',
+          data: formData
+        }
+      });
+
+      if (error) {
+        console.error('AI generation error:', error);
+        toast.error("Failed to generate poster content. Please try again.");
+        return;
+      }
+
+      // Save to database if user is logged in
+      if (user) {
+        const { error: saveError } = await supabase
+          .from('posters')
+          .insert({
+            user_id: user.id,
+            business_name: formData.businessName,
+            title: data.title,
+            slogan: data.slogan,
+            description: data.description,
+            phone_number: formData.phoneNumber,
+            language: formData.language,
+            tone: formData.tone
+          });
+
+        if (saveError) {
+          console.error('Save error:', saveError);
+          toast.error("Content generated but failed to save");
+        } else {
+          toast.success("Poster generated and saved successfully!");
+        }
+      } else {
+        toast.success("Poster content generated successfully!");
+      }
       
-      // Navigate to preview with form data
+      // Navigate to preview with form data and AI-generated content
       navigate("/poster-preview", { 
         state: { 
           formData,
           generatedContent: {
-            title: `${formData.businessName} - Your Success Partner`,
-            slogan: `Quality ${formData.services} at Unbeatable Prices!`,
-            description: `Experience the best ${formData.services} in town. We deliver excellence with every service, ensuring your satisfaction is our top priority.`,
+            title: data.title,
+            slogan: data.slogan,
+            description: data.description,
             callToAction: `Call ${formData.phoneNumber || "us"} today!`
           }
         }
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Generation error:', error);
+      toast.error("Failed to generate poster content. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -199,6 +242,11 @@ const PosterGenerator = () => {
 
             <p className="text-sm text-gray-500 text-center">
               Our AI will analyze your business and create compelling poster content in seconds.
+              {!user && (
+                <span className="block mt-2 text-amber-600">
+                  💡 Sign in to save your generated posters to your dashboard
+                </span>
+              )}
             </p>
           </CardContent>
         </Card>

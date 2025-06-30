@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Download, Share2, Edit, FileText } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { exportInvoiceToPDF } from "@/utils/pdfExport";
 
 const InvoicePreview = () => {
   const location = useLocation();
@@ -17,21 +18,27 @@ const InvoicePreview = () => {
 
   const { businessInfo, clientInfo, items, notes, total, invoiceNumber, date } = invoiceData;
 
-  const handleDownload = () => {
-    toast.success("Invoice downloaded successfully!");
-    // In real app, this would generate and download the PDF
+  const handleDownload = async () => {
+    try {
+      await exportInvoiceToPDF(invoiceData);
+      toast.success("Invoice downloaded successfully!");
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error("Failed to download invoice. Please try again.");
+    }
   };
 
   const handleShare = () => {
     const shareText = `Invoice ${invoiceNumber} from ${businessInfo.name} - Total: R${total.toFixed(2)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    
     if (navigator.share) {
       navigator.share({
         title: "Invoice",
         text: shareText,
       });
     } else {
-      navigator.clipboard.writeText(shareText);
-      toast.success("Invoice details copied to clipboard!");
+      window.open(whatsappUrl, '_blank');
     }
   };
 

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Download, Share2, Edit, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { exportPosterToPDF } from "@/utils/pdfExport";
 
 const PosterPreview = () => {
   const location = useLocation();
@@ -15,21 +16,27 @@ const PosterPreview = () => {
     return null;
   }
 
-  const handleDownload = () => {
-    toast.success("Poster downloaded successfully!");
-    // In real app, this would generate and download the PDF
+  const handleDownload = async () => {
+    try {
+      await exportPosterToPDF('poster-content', `${formData.businessName.replace(/\s+/g, '-')}-poster.pdf`);
+      toast.success("Poster downloaded successfully!");
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error("Failed to download poster. Please try again.");
+    }
   };
 
   const handleShare = () => {
     const shareText = `Check out my business poster: ${generatedContent.title}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    
     if (navigator.share) {
       navigator.share({
         title: "My Business Poster",
         text: shareText,
       });
     } else {
-      navigator.clipboard.writeText(shareText);
-      toast.success("Poster details copied to clipboard!");
+      window.open(whatsappUrl, '_blank');
     }
   };
 
@@ -61,7 +68,7 @@ const PosterPreview = () => {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center">Your AI-Generated Poster</h2>
             
-            <Card className="shadow-2xl overflow-hidden">
+            <Card className="shadow-2xl overflow-hidden" id="poster-content">
               <div className="gradient-african p-8 text-white text-center">
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">
                   {generatedContent.title}

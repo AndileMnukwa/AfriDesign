@@ -1,126 +1,131 @@
 
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, FileText, Image, Trash2, Eye, Copy, Plus } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import AuthButton from '@/components/AuthButton';
-
-interface Poster {
-  id: string;
-  title: string;
-  slogan: string;
-  business_name: string;
-  created_at: string;
-}
-
-interface Invoice {
-  id: string;
-  business_info: any;
-  client_info: any;
-  total: number;
-  invoice_number: string;
-  created_at: string;
-}
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, Image, Plus, Download, Eye, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import AuthButton from "@/components/AuthButton";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const [posters, setPosters] = useState<Poster[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [posters, setPosters] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
-  useEffect(() => {
     if (user) {
-      fetchUserData();
+      fetchUserContent();
     }
   }, [user]);
 
-  const fetchUserData = async () => {
+  const fetchUserContent = async () => {
     try {
       // Fetch posters
       const { data: postersData, error: postersError } = await supabase
         .from('posters')
         .select('*')
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (postersError) throw postersError;
-      setPosters(postersData || []);
+      if (postersError) {
+        console.error('Error fetching posters:', postersError);
+      } else {
+        setPosters(postersData || []);
+      }
 
       // Fetch invoices
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select('*')
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (invoicesError) throw invoicesError;
-      setInvoices(invoicesData || []);
+      if (invoicesError) {
+        console.error('Error fetching invoices:', invoicesError);
+      } else {
+        setInvoices(invoicesData || []);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load your data');
+      console.error('Error fetching user content:', error);
+      toast.error('Failed to load your content');
     } finally {
       setLoadingData(false);
     }
   };
 
   const deletePoster = async (id: string) => {
-    try {
-      const { error } = await supabase.from('posters').delete().eq('id', id);
-      if (error) throw error;
-      
-      setPosters(posters.filter(p => p.id !== id));
-      toast.success('Poster deleted successfully');
-    } catch (error) {
-      console.error('Error deleting poster:', error);
+    const { error } = await supabase
+      .from('posters')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
       toast.error('Failed to delete poster');
+    } else {
+      toast.success('Poster deleted successfully');
+      fetchUserContent();
     }
   };
 
   const deleteInvoice = async (id: string) => {
-    try {
-      const { error } = await supabase.from('invoices').delete().eq('id', id);
-      if (error) throw error;
-      
-      setInvoices(invoices.filter(i => i.id !== id));
-      toast.success('Invoice deleted successfully');
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
+    const { error } = await supabase
+      .from('invoices')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
       toast.error('Failed to delete invoice');
+    } else {
+      toast.success('Invoice deleted successfully');
+      fetchUserContent();
     }
   };
 
-  if (loading || loadingData) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 gradient-african rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-6 h-6 text-white animate-pulse" />
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+        <header className="border-b bg-white/80 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link to="/" className="text-2xl font-bold text-gradient">
+              SmartBiz AI
+            </Link>
+            <AuthButton />
           </div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+        </header>
+        
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">Sign In Required</h1>
+          <p className="text-gray-600 mb-8">Please sign in to access your dashboard and manage your content.</p>
+          <Link to="/auth">
+            <Button className="gradient-nature text-white">
+              Sign In
+            </Button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 gradient-african rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gradient">AfriDesign</span>
+          <Link to="/" className="text-2xl font-bold text-gradient">
+            SmartBiz AI
           </Link>
           <AuthButton />
         </div>
@@ -128,137 +133,135 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Dashboard</h1>
-          <p className="text-gray-600">Manage your posters and invoices</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Manage your AI-generated posters and invoices</p>
         </div>
 
-        <div className="grid gap-8">
-          {/* Quick Actions */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Link to="/poster">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-orange-200">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 gradient-african rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Image className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">Create New Poster</h3>
-                  <p className="text-gray-600 text-sm">Generate AI-powered marketing posters</p>
-                </CardContent>
-              </Card>
-            </Link>
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Link to="/poster">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="text-center">
+                <div className="w-12 h-12 gradient-african rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Image className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Create New Poster</CardTitle>
+                <CardDescription>Generate AI-powered marketing posters</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
 
-            <Link to="/invoice">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-orange-200">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 gradient-nature rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">Create New Invoice</h3>
-                  <p className="text-gray-600 text-sm">Generate professional invoices</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
+          <Link to="/invoice">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader className="text-center">
+                <div className="w-12 h-12 gradient-nature rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle>Create New Invoice</CardTitle>
+                <CardDescription>Generate professional invoices</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        </div>
 
-          {/* Posters Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Your Posters</h2>
-              <span className="text-sm text-gray-500">{posters.length} total</span>
+        {/* Saved Posters */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Posters ({posters.length})</h2>
+          {loadingData ? (
+            <div className="text-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading posters...</p>
             </div>
-            
-            {posters.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Image className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">No posters yet</h3>
-                  <p className="text-gray-600 mb-4">Create your first AI-powered marketing poster</p>
-                  <Link to="/poster">
-                    <Button className="gradient-african hover:opacity-90 text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Poster
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {posters.map((poster) => (
-                  <Card key={poster.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{poster.title}</CardTitle>
-                      <p className="text-sm text-gray-600">{poster.business_name}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-700 mb-4 line-clamp-2">{poster.slogan}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                          {new Date(poster.created_at).toLocaleDateString()}
-                        </span>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="ghost" onClick={() => deletePoster(poster.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Invoices Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Your Invoices</h2>
-              <span className="text-sm text-gray-500">{invoices.length} total</span>
+          ) : posters.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Image className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No posters created yet</p>
+                <Link to="/poster" className="inline-block mt-4">
+                  <Button>Create Your First Poster</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posters.map((poster) => (
+                <Card key={poster.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{poster.business_name}</CardTitle>
+                    <CardDescription>{poster.title}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 mb-4">{poster.slogan}</p>
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => deletePoster(poster.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            {invoices.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">No invoices yet</h3>
-                  <p className="text-gray-600 mb-4">Create your first professional invoice</p>
-                  <Link to="/invoice">
-                    <Button className="gradient-nature hover:opacity-90 text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Invoice
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {invoices.map((invoice) => (
-                  <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">#{invoice.invoice_number}</CardTitle>
-                      <p className="text-sm text-gray-600">
-                        {invoice.client_info?.name || 'Client'}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-lg font-semibold text-green-600 mb-4">
-                        R{invoice.total.toFixed(2)}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500">
-                          {new Date(invoice.created_at).toLocaleDateString()}
-                        </span>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="ghost" onClick={() => deleteInvoice(invoice.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
+        </div>
+
+        {/* Saved Invoices */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Invoices ({invoices.length})</h2>
+          {loadingData ? (
+            <div className="text-center py-8">
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading invoices...</p>
+            </div>
+          ) : invoices.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No invoices created yet</p>
+                <Link to="/invoice" className="inline-block mt-4">
+                  <Button>Create Your First Invoice</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {invoices.map((invoice) => (
+                <Card key={invoice.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-lg">#{invoice.invoice_number}</CardTitle>
+                    <CardDescription>
+                      {invoice.business_info?.name} → {invoice.client_info?.name}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-lg font-bold text-green-600 mb-4">R{invoice.total}</p>
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => deleteInvoice(invoice.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
