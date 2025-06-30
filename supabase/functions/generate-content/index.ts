@@ -12,10 +12,14 @@ interface BusinessData {
   tone: string;
 }
 
-interface GeneratedContent {
+interface EnhancedGeneratedContent {
   title: string;
   slogan: string;
   description: string;
+  visual_style: string;
+  image_keywords: string[];
+  font_suggestions: string[];
+  call_to_action?: string;
 }
 
 async function generateWithAnthropic(prompt: string): Promise<string> {
@@ -34,7 +38,7 @@ async function generateWithAnthropic(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 1000,
+      max_tokens: 2000,
       messages: [
         {
           role: 'user',
@@ -54,27 +58,39 @@ async function generateWithAnthropic(prompt: string): Promise<string> {
   return data.content[0].text;
 }
 
-function createPosterPrompt(businessData: BusinessData): string {
+function createEnhancedPosterPrompt(businessData: BusinessData): string {
   const languageInstruction = businessData.language !== 'english' 
-    ? `Please respond in ${businessData.language} language.` 
+    ? `Please respond in ${businessData.language} language for all text content.` 
     : '';
 
-  return `Create marketing content for an African small business with these details:
-Business Name: ${businessData.businessName}
-Business Type: ${businessData.businessType || 'General Business'}
-Services: ${businessData.services || 'Various services'}
-Target Audience: ${businessData.targetAudience || 'Local community'}
-Tone: ${businessData.tone}
+  return `You are a senior African brand strategist and copywriter tasked with generating high-conversion, Canva-style poster content for an African business.
+
+Business Overview:
+- Name: ${businessData.businessName}
+- Type: ${businessData.businessType || 'General Business'}
+- Services: ${businessData.services || 'Various services'}
+- Target Audience: ${businessData.targetAudience || 'Local community and professionals'}
+- Brand Tone: ${businessData.tone}
 ${languageInstruction}
 
-Generate content in this exact JSON format:
+Creative Goals:
+- The copy should immediately connect with working-class African families and professionals
+- Emphasize trust, quality, and cultural pride
+- Inspire action (ordering, calling, sharing) with clear emotional cues
+- Bring cultural richness and pride subtly into the tone
+- Design style should reflect aesthetically bold, mobile-first, Instagrammable posters
+
+Generate content in this EXACT JSON format (no additional text before or after):
 {
-  "title": "A catchy title (max 50 characters)",
-  "slogan": "A memorable slogan (max 60 characters)", 
-  "description": "A compelling 2-3 sentence description that highlights the business value and appeals to the target audience"
+  "title": "Powerful short headline (3–5 words max that immediately grabs attention)",
+  "slogan": "Memorable subheading that conveys warmth, trust, and cultural connection",
+  "description": "1–2 sentence marketing copy (max 30 words), emotionally resonant and specific to the business value",
+  "visual_style": "Detailed creative direction for Canva-style layout: specify colors (warm African palette like terracotta, ochre, gold, forest green), typography style (bold but warm), composition (curved elements, rounded buttons), and overall mood",
+  "image_keywords": ["5-7 specific image search terms for African business context, food imagery, or cultural elements"],
+  "font_suggestions": ["3-4 Google Fonts or Canva-style font pairings that work well for African brand aesthetics"]
 }
 
-Make the content culturally relevant for African markets, professional yet approachable, and include local context where appropriate. Ensure the tone matches the requested style: ${businessData.tone}.`;
+Make the content culturally relevant for African markets, professional yet approachable, and ensure the visual style direction is detailed enough for implementation in a design tool. Focus on ${businessData.tone} tone while maintaining cultural authenticity.`;
 }
 
 function createInvoicePrompt(total: number, clientName: string, businessName: string): string {
@@ -84,12 +100,37 @@ Client Name: ${clientName}
 Business Name: ${businessName}
 
 Generate a professional, friendly payment note that includes:
-- Thank you message
+- Thank you message with African warmth
 - Payment terms (30 days)
 - Appreciation for business relationship
-- Forward-looking statement
+- Forward-looking statement about future collaboration
 
 Keep it concise but warm, suitable for South African business context. Respond with just the note text, no JSON format needed.`;
+}
+
+function generateEnhancedPosterFallback(businessData: BusinessData): EnhancedGeneratedContent {
+  const businessType = businessData.businessType?.toLowerCase() || '';
+  const isFood = businessType.includes('food') || businessType.includes('restaurant') || businessType.includes('kitchen') || businessType.includes('catering');
+  
+  if (isFood) {
+    return {
+      title: `Taste of ${businessData.businessName}`,
+      slogan: "Authentic flavors, made with love",
+      description: `Experience traditional African cuisine crafted with care. Fresh ingredients, family recipes, unforgettable taste.`,
+      visual_style: "Warm color palette with terracotta (#CC7A41), golden yellow (#F4A460), and forest green (#2D5939). Use curved design elements, rounded corners, and bold but welcoming typography. Include African patterns subtly in background. Mobile-first vertical layout with clear hierarchy.",
+      image_keywords: ["african food", "traditional cooking", "family meal", "fresh ingredients", "cultural cuisine", "home cooking", "spices"],
+      font_suggestions: ["Poppins + Merriweather", "Open Sans + Playfair Display", "Nunito + Lora", "Inter + Crimson Text"]
+    };
+  }
+  
+  return {
+    title: `Welcome to ${businessData.businessName}`,
+    slogan: "Quality service you can trust",
+    description: `Experience excellent service that puts your needs first. Professional, reliable, and proudly African.`,
+    visual_style: "Professional color scheme with deep blue (#1E3A8A), warm gold (#D97706), and earth brown (#A3692C). Clean, modern design with subtle African geometric patterns. Bold headers with softer body text. Mobile-optimized vertical composition.",
+    image_keywords: ["professional service", "african business", "quality work", "trust", "community", "excellence", "local business"],
+    font_suggestions: ["Roboto + Open Sans", "Lato + Source Sans Pro", "Montserrat + Nunito", "Inter + System UI"]
+  };
 }
 
 function generateInvoiceNoteFallback(total: number, clientName: string, businessName: string): string {
@@ -126,26 +167,32 @@ serve(async (req) => {
       };
 
       try {
-        const prompt = createPosterPrompt(businessData);
-        console.log('Generated prompt for poster:', prompt);
+        const prompt = createEnhancedPosterPrompt(businessData);
+        console.log('Generated enhanced prompt for poster:', prompt);
         
         const aiResponse = await generateWithAnthropic(prompt);
         console.log('Anthropic response:', aiResponse);
         
         // Parse the JSON response from Anthropic
         const parsedContent = JSON.parse(aiResponse);
+        
+        // Ensure all required fields are present
         response = {
-          title: parsedContent.title || businessData.businessName,
+          title: parsedContent.title || `Welcome to ${businessData.businessName}`,
           slogan: parsedContent.slogan || 'Quality service you can trust',
-          description: parsedContent.description || `Experience excellent service at ${businessData.businessName}. We provide quality solutions tailored to your needs.`
+          description: parsedContent.description || `Experience excellent service at ${businessData.businessName}. We provide quality solutions tailored to your needs.`,
+          visual_style: parsedContent.visual_style || 'Modern, clean design with warm colors and professional typography',
+          image_keywords: Array.isArray(parsedContent.image_keywords) ? parsedContent.image_keywords : ['business', 'professional', 'quality'],
+          font_suggestions: Array.isArray(parsedContent.font_suggestions) ? parsedContent.font_suggestions : ['Open Sans', 'Roboto'],
+          call_to_action: `Call ${businessData.phoneNumber || "us"} today!`
         };
       } catch (error) {
         console.error('Error with Anthropic API for poster:', error);
-        // Fallback to basic content if API fails
+        // Use enhanced fallback with design guidance
+        const fallbackContent = generateEnhancedPosterFallback(businessData);
         response = {
-          title: `Welcome to ${businessData.businessName}`,
-          slogan: 'Quality service you can trust',
-          description: `Experience excellent service at ${businessData.businessName}. We provide quality solutions tailored to your needs.`
+          ...fallbackContent,
+          call_to_action: `Call ${businessData.phoneNumber || "us"} today!`
         };
       }
     } else if (type === 'invoice') {

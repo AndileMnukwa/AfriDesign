@@ -54,6 +54,9 @@ All colors MUST be HSL.
     --gold-prosperity: 45 93% 47%;
     --red-earth: 14 85% 50%;
     --blue-sky: 210 100% 56%;
+    --terracotta: 20 55% 55%;
+    --ochre: 39 67% 69%;
+    --forest-green: 142 43% 23%;
   }
 
   .dark {
@@ -106,10 +109,30 @@ All colors MUST be HSL.
     background: linear-gradient(135deg, hsl(var(--green-nature)) 0%, hsl(var(--blue-sky)) 100%);
   }
   
+  .gradient-warm {
+    background: linear-gradient(135deg, hsl(var(--terracotta)) 0%, hsl(var(--ochre)) 50%, hsl(var(--gold-prosperity)) 100%);
+  }
+  
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--orange-sunset)), hsl(var(--gold-prosperity)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  
+  .text-warm-gradient {
+    background: linear-gradient(135deg, hsl(var(--terracotta)), hsl(var(--ochre)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .rounded-african {
+    border-radius: 1.5rem;
+  }
+  
+  .shadow-african {
+    box-shadow: 0 10px 30px -10px hsla(var(--orange-sunset), 0.3);
+  }
 }
+</lov-code>
