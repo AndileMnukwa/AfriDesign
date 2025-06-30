@@ -1,8 +1,4 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
-
-// Local content generation functions (copied from utils)
 interface BusinessData {
   businessName: string;
   businessType?: string;
@@ -11,6 +7,12 @@ interface BusinessData {
   phoneNumber?: string;
   language: string;
   tone: string;
+}
+
+interface GeneratedContent {
+  title: string;
+  slogan: string;
+  description: string;
 }
 
 const businessTypeTemplates = {
@@ -173,6 +175,7 @@ function generateDescription(businessData: BusinessData): string {
   
   let description = descriptions[Math.floor(Math.random() * descriptions.length)];
   
+  // Add target audience context if provided
   if (businessData.targetAudience) {
     description += ` Perfect for ${businessData.targetAudience.toLowerCase()}.`;
   }
@@ -180,7 +183,7 @@ function generateDescription(businessData: BusinessData): string {
   return translateText(description, businessData.language);
 }
 
-function generateLocalContent(businessData: BusinessData) {
+export function generateLocalContent(businessData: BusinessData): GeneratedContent {
   return {
     title: generateTitle(businessData.businessName, businessData.tone, businessData.language),
     slogan: generateSlogan(businessData),
@@ -188,7 +191,7 @@ function generateLocalContent(businessData: BusinessData) {
   };
 }
 
-function generateInvoiceNote(total: number, clientName: string, businessName: string): string {
+export function generateInvoiceNote(total: number, clientName: string, businessName: string): string {
   const notes = [
     `Thank you for choosing ${businessName}! Payment of R${total.toFixed(2)} is due within 30 days. We appreciate your business and look forward to serving you again.`,
     `We're grateful for your trust in ${businessName}. Please remit payment of R${total.toFixed(2)} within 30 days of this invoice date. Thank you for your continued partnership.`,
@@ -198,55 +201,3 @@ function generateInvoiceNote(total: number, clientName: string, businessName: st
   
   return notes[Math.floor(Math.random() * notes.length)];
 }
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  try {
-    const { type, data } = await req.json()
-
-    let response;
-
-    if (type === 'poster') {
-      const businessData: BusinessData = {
-        businessName: data.businessName,
-        businessType: data.businessType,
-        services: data.services,
-        targetAudience: data.targetAudience,
-        phoneNumber: data.phoneNumber,
-        language: data.language || 'english',
-        tone: data.tone || 'friendly'
-      };
-
-      response = generateLocalContent(businessData);
-    } else if (type === 'invoice') {
-      const paymentNote = generateInvoiceNote(
-        data.total,
-        data.clientName || 'Valued Client',
-        data.businessName || 'Business'
-      );
-      
-      response = { paymentNote };
-    } else {
-      throw new Error('Invalid type specified');
-    }
-
-    console.log('Generated content:', response);
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-
-  } catch (error) {
-    console.error('Error in generate-content function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
-  }
-})
