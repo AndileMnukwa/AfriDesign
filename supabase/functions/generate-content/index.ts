@@ -2,7 +2,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 
-// Local content generation functions (copied from utils)
 interface BusinessData {
   businessName: string;
   businessType?: string;
@@ -13,182 +12,87 @@ interface BusinessData {
   tone: string;
 }
 
-const businessTypeTemplates = {
-  salon: {
-    keywords: ['beauty', 'style', 'glamour', 'transformation', 'expert', 'professional'],
-    services: ['haircuts', 'styling', 'coloring', 'treatments', 'makeovers']
-  },
-  restaurant: {
-    keywords: ['delicious', 'authentic', 'fresh', 'tasty', 'quality', 'homemade'],
-    services: ['dining', 'takeaway', 'catering', 'delivery', 'meals']
-  },
-  electronics: {
-    keywords: ['quality', 'reliable', 'latest', 'affordable', 'trusted', 'warranty'],
-    services: ['repair', 'sales', 'installation', 'support', 'maintenance']
-  },
-  clothing: {
-    keywords: ['fashion', 'stylish', 'trendy', 'quality', 'affordable', 'latest'],
-    services: ['clothing', 'accessories', 'fashion', 'apparel', 'wear']
-  },
-  services: {
-    keywords: ['professional', 'reliable', 'expert', 'quality', 'trusted', 'experienced'],
-    services: ['consultation', 'support', 'solutions', 'assistance', 'expertise']
-  }
-};
-
-const toneTemplates = {
-  friendly: {
-    titleWords: ['Welcome to', 'Your', 'Come to', 'Visit', 'Experience'],
-    sloganWords: ['where you matter', 'your satisfaction is our priority', 'serving you with a smile', 'making you happy'],
-    descriptors: ['friendly', 'welcoming', 'caring', 'warm', 'personal']
-  },
-  professional: {
-    titleWords: ['Excellence at', 'Professional', 'Expert', 'Premium', 'Quality'],
-    sloganWords: ['excellence delivered', 'professional service guaranteed', 'quality you can trust', 'expert solutions'],
-    descriptors: ['professional', 'expert', 'reliable', 'efficient', 'quality']
-  },
-  bold: {
-    titleWords: ['The Best', 'Ultimate', 'Number One', 'Top Choice', 'Unbeatable'],
-    sloganWords: ['unbeatable quality', 'the ultimate choice', 'excellence redefined', 'setting new standards'],
-    descriptors: ['outstanding', 'exceptional', 'superior', 'unmatched', 'premium']
-  },
-  elegant: {
-    titleWords: ['Elegant', 'Sophisticated', 'Premium', 'Exclusive', 'Refined'],
-    sloganWords: ['elegance redefined', 'sophisticated solutions', 'where quality meets style', 'refined excellence'],
-    descriptors: ['elegant', 'sophisticated', 'refined', 'premium', 'exclusive']
-  },
-  urgent: {
-    titleWords: ['Act Now!', 'Limited Time', 'Hurry!', 'Dont Miss Out', 'Today Only'],
-    sloganWords: ['limited time offer', 'act fast', 'dont wait', 'special deal today'],
-    descriptors: ['urgent', 'limited', 'exclusive', 'special', 'immediate']
-  }
-};
-
-const languageTranslations = {
-  swahili: {
-    'Welcome to': 'Karibu',
-    'Your': 'Yako',
-    'Professional': 'Kitaalamu',
-    'Quality': 'Ubora',
-    'Call': 'Piga simu',
-    'today': 'leo'
-  },
-  zulu: {
-    'Welcome to': 'Siyakwamukela ku',
-    'Your': 'Yakho',
-    'Professional': 'Ochwepheshe',
-    'Quality': 'Ikhwalithi',
-    'Call': 'Shayela ku',
-    'today': 'namuhla'
-  },
-  xhosa: {
-    'Welcome to': 'Wamkelekile ku',
-    'Your': 'Yakho',
-    'Professional': 'Ochwepheshe',
-    'Quality': 'Umgangatho',
-    'Call': 'Biza ku',
-    'today': 'namhla'
-  },
-  afrikaans: {
-    'Welcome to': 'Welkom by',
-    'Your': 'Jou',
-    'Professional': 'Professionele',
-    'Quality': 'Kwaliteit',
-    'Call': 'Skakel',
-    'today': 'vandag'
-  }
-};
-
-function detectBusinessType(businessType?: string, services?: string): string {
-  const text = `${businessType || ''} ${services || ''}`.toLowerCase();
-  
-  if (text.includes('hair') || text.includes('salon') || text.includes('beauty')) return 'salon';
-  if (text.includes('food') || text.includes('restaurant') || text.includes('cafe')) return 'restaurant';
-  if (text.includes('electronic') || text.includes('phone') || text.includes('computer')) return 'electronics';
-  if (text.includes('cloth') || text.includes('fashion') || text.includes('apparel')) return 'clothing';
-  
-  return 'services';
+interface GeneratedContent {
+  title: string;
+  slogan: string;
+  description: string;
 }
 
-function translateText(text: string, language: string): string {
-  if (language === 'english') return text;
+async function generateWithAnthropic(prompt: string): Promise<string> {
+  const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
   
-  const translations = languageTranslations[language as keyof typeof languageTranslations];
-  if (!translations) return text;
-  
-  let translatedText = text;
-  Object.entries(translations).forEach(([english, translated]) => {
-    translatedText = translatedText.replace(new RegExp(english, 'gi'), translated);
+  if (!anthropicApiKey) {
+    throw new Error('Anthropic API key not configured');
+  }
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': anthropicApiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 1000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
   });
-  
-  return translatedText;
-}
 
-function generateTitle(businessName: string, tone: string, language: string): string {
-  const toneTemplate = toneTemplates[tone as keyof typeof toneTemplates] || toneTemplates.friendly;
-  const titleWord = toneTemplate.titleWords[Math.floor(Math.random() * toneTemplate.titleWords.length)];
-  
-  let title = `${titleWord} ${businessName}`;
-  if (title.length > 50) {
-    title = businessName;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Anthropic API error:', response.status, errorText);
+    throw new Error(`Anthropic API error: ${response.status}`);
   }
-  
-  return translateText(title, language);
+
+  const data = await response.json();
+  return data.content[0].text;
 }
 
-function generateSlogan(businessData: BusinessData): string {
-  const detectedType = detectBusinessType(businessData.businessType, businessData.services);
-  const toneTemplate = toneTemplates[businessData.tone as keyof typeof toneTemplates] || toneTemplates.friendly;
-  const typeTemplate = businessTypeTemplates[detectedType as keyof typeof businessTypeTemplates];
-  
-  const sloganBase = toneTemplate.sloganWords[Math.floor(Math.random() * toneTemplate.sloganWords.length)];
-  const keyword = typeTemplate.keywords[Math.floor(Math.random() * typeTemplate.keywords.length)];
-  
-  const slogans = [
-    `${keyword} ${sloganBase}`,
-    `Experience ${keyword} service`,
-    `Your ${keyword} solution`,
-    `${keyword} service you can trust`
-  ];
-  
-  const selectedSlogan = slogans[Math.floor(Math.random() * slogans.length)];
-  return translateText(selectedSlogan, businessData.language);
+function createPosterPrompt(businessData: BusinessData): string {
+  const languageInstruction = businessData.language !== 'english' 
+    ? `Please respond in ${businessData.language} language.` 
+    : '';
+
+  return `Create marketing content for an African small business with these details:
+Business Name: ${businessData.businessName}
+Business Type: ${businessData.businessType || 'General Business'}
+Services: ${businessData.services || 'Various services'}
+Target Audience: ${businessData.targetAudience || 'Local community'}
+Tone: ${businessData.tone}
+${languageInstruction}
+
+Generate content in this exact JSON format:
+{
+  "title": "A catchy title (max 50 characters)",
+  "slogan": "A memorable slogan (max 60 characters)", 
+  "description": "A compelling 2-3 sentence description that highlights the business value and appeals to the target audience"
 }
 
-function generateDescription(businessData: BusinessData): string {
-  const detectedType = detectBusinessType(businessData.businessType, businessData.services);
-  const toneTemplate = toneTemplates[businessData.tone as keyof typeof toneTemplates] || toneTemplates.friendly;
-  const typeTemplate = businessTypeTemplates[detectedType as keyof typeof businessTypeTemplates];
-  
-  const descriptor = toneTemplate.descriptors[Math.floor(Math.random() * toneTemplate.descriptors.length)];
-  const keyword = typeTemplate.keywords[Math.floor(Math.random() * typeTemplate.keywords.length)];
-  const service = typeTemplate.services[Math.floor(Math.random() * typeTemplate.services.length)];
-  
-  const descriptions = [
-    `We provide ${descriptor} ${service} that exceed your expectations. Our team is dedicated to delivering ${keyword} results that make a difference in your life.`,
-    `Experience the difference with our ${keyword} approach to ${service}. We combine expertise with ${descriptor} service to ensure your complete satisfaction.`,
-    `At ${businessData.businessName}, we specialize in ${descriptor} ${service} tailored to your needs. Our commitment to ${keyword} excellence sets us apart.`,
-    `Discover ${keyword} ${service} delivered with a ${descriptor} touch. We take pride in providing solutions that truly matter to our valued customers.`
-  ];
-  
-  let description = descriptions[Math.floor(Math.random() * descriptions.length)];
-  
-  if (businessData.targetAudience) {
-    description += ` Perfect for ${businessData.targetAudience.toLowerCase()}.`;
-  }
-  
-  return translateText(description, businessData.language);
+Make the content culturally relevant for African markets, professional yet approachable, and include local context where appropriate. Ensure the tone matches the requested style: ${businessData.tone}.`;
 }
 
-function generateLocalContent(businessData: BusinessData) {
-  return {
-    title: generateTitle(businessData.businessName, businessData.tone, businessData.language),
-    slogan: generateSlogan(businessData),
-    description: generateDescription(businessData)
-  };
+function createInvoicePrompt(total: number, clientName: string, businessName: string): string {
+  return `Create a professional payment note for a South African business invoice with these details:
+Total Amount: R${total.toFixed(2)}
+Client Name: ${clientName}
+Business Name: ${businessName}
+
+Generate a professional, friendly payment note that includes:
+- Thank you message
+- Payment terms (30 days)
+- Appreciation for business relationship
+- Forward-looking statement
+
+Keep it concise but warm, suitable for South African business context. Respond with just the note text, no JSON format needed.`;
 }
 
-function generateInvoiceNote(total: number, clientName: string, businessName: string): string {
+function generateInvoiceNoteFallback(total: number, clientName: string, businessName: string): string {
   const notes = [
     `Thank you for choosing ${businessName}! Payment of R${total.toFixed(2)} is due within 30 days. We appreciate your business and look forward to serving you again.`,
     `We're grateful for your trust in ${businessName}. Please remit payment of R${total.toFixed(2)} within 30 days of this invoice date. Thank you for your continued partnership.`,
@@ -206,6 +110,7 @@ serve(async (req) => {
 
   try {
     const { type, data } = await req.json()
+    console.log('Request received:', { type, data });
 
     let response;
 
@@ -220,20 +125,57 @@ serve(async (req) => {
         tone: data.tone || 'friendly'
       };
 
-      response = generateLocalContent(businessData);
+      try {
+        const prompt = createPosterPrompt(businessData);
+        console.log('Generated prompt for poster:', prompt);
+        
+        const aiResponse = await generateWithAnthropic(prompt);
+        console.log('Anthropic response:', aiResponse);
+        
+        // Parse the JSON response from Anthropic
+        const parsedContent = JSON.parse(aiResponse);
+        response = {
+          title: parsedContent.title || businessData.businessName,
+          slogan: parsedContent.slogan || 'Quality service you can trust',
+          description: parsedContent.description || `Experience excellent service at ${businessData.businessName}. We provide quality solutions tailored to your needs.`
+        };
+      } catch (error) {
+        console.error('Error with Anthropic API for poster:', error);
+        // Fallback to basic content if API fails
+        response = {
+          title: `Welcome to ${businessData.businessName}`,
+          slogan: 'Quality service you can trust',
+          description: `Experience excellent service at ${businessData.businessName}. We provide quality solutions tailored to your needs.`
+        };
+      }
     } else if (type === 'invoice') {
-      const paymentNote = generateInvoiceNote(
-        data.total,
-        data.clientName || 'Valued Client',
-        data.businessName || 'Business'
-      );
-      
-      response = { paymentNote };
+      try {
+        const prompt = createInvoicePrompt(
+          data.total,
+          data.clientName || 'Valued Client',
+          data.businessName || 'Business'
+        );
+        console.log('Generated prompt for invoice:', prompt);
+        
+        const aiResponse = await generateWithAnthropic(prompt);
+        console.log('Anthropic response for invoice:', aiResponse);
+        
+        response = { paymentNote: aiResponse.trim() };
+      } catch (error) {
+        console.error('Error with Anthropic API for invoice:', error);
+        // Fallback to pre-written note if API fails
+        const paymentNote = generateInvoiceNoteFallback(
+          data.total,
+          data.clientName || 'Valued Client',
+          data.businessName || 'Business'
+        );
+        response = { paymentNote };
+      }
     } else {
       throw new Error('Invalid type specified');
     }
 
-    console.log('Generated content:', response);
+    console.log('Final response:', response);
 
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
