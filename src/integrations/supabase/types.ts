@@ -9,7 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      invoices: {
+        Row: {
+          business_info: Json
+          client_info: Json
+          created_at: string
+          id: string
+          invoice_number: string
+          items: Json
+          notes: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          business_info: Json
+          client_info: Json
+          created_at?: string
+          id?: string
+          invoice_number: string
+          items: Json
+          notes?: string | null
+          total: number
+          user_id: string
+        }
+        Update: {
+          business_info?: Json
+          client_info?: Json
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          items?: Json
+          notes?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      posters: {
+        Row: {
+          business_name: string
+          created_at: string
+          description: string
+          id: string
+          language: string | null
+          phone_number: string | null
+          slogan: string
+          theme: string | null
+          title: string
+          tone: string | null
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          created_at?: string
+          description: string
+          id?: string
+          language?: string | null
+          phone_number?: string | null
+          slogan: string
+          theme?: string | null
+          title: string
+          tone?: string | null
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          description?: string
+          id?: string
+          language?: string | null
+          phone_number?: string | null
+          slogan?: string
+          theme?: string | null
+          title?: string
+          tone?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
