@@ -25,15 +25,24 @@ serve(async (req) => {
   try {
     const { prompt, businessProfile } = await req.json()
     
+    const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    
+    if (!anthropicApiKey) {
+      console.error('ANTHROPIC_API_KEY not configured')
+      throw new Error('AI service configuration error - missing API key')
+    }
+
+    console.log('Calling Anthropic API with business profile:', businessProfile?.businessName)
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': Deno.env.get('ANTHROPIC_API_KEY') || '',
+        'x-api-key': anthropicApiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         temperature: 0.7,
         messages: [{
@@ -44,10 +53,27 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`Anthropic API error: ${response.status} - ${errorText}`)
+      
+      if (response.status === 401) {
+        throw new Error('AI service authentication failed - please check API key configuration')
+      } else if (response.status === 429) {
+        throw new Error('AI service rate limit exceeded - please try again in a moment')
+      } else if (response.status >= 500) {
+        throw new Error('AI service temporarily unavailable - please try again')
+      } else {
+        throw new Error(`AI service error: ${response.status}`)
+      }
     }
 
     const data = await response.json()
+    
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Invalid response from Anthropic:', data)
+      throw new Error('AI service returned invalid response')
+    }
+
     const content = data.content[0].text
 
     // Parse the JSON response from Claude
@@ -62,13 +88,15 @@ serve(async (req) => {
       }
     } catch (parseError) {
       console.error('Failed to parse Claude response:', content)
-      throw new Error('Invalid JSON response from AI')
+      throw new Error('AI service returned malformed content - please try again')
     }
 
     // Add industry-specific enhancements
-    if (businessProfile.industry) {
+    if (businessProfile?.industry) {
       parsedContent = await enhanceWithIndustryContext(parsedContent, businessProfile)
     }
+
+    console.log('Successfully generated enhanced content for:', businessProfile?.businessName)
 
     return new Response(
       JSON.stringify({ content: parsedContent }),
@@ -82,10 +110,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Enhanced content generation error:', error)
+    
+    // Return specific error without fallback content
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to generate enhanced content',
-        fallback: getFallbackContent(req.body?.businessProfile)
+        error: error.message || 'AI content generation failed'
       }),
       { 
         status: 500,
@@ -121,23 +150,4 @@ async function enhanceWithIndustryContext(content: any, profile: BusinessProfile
   }
 
   return content
-}
-
-function getFallbackContent(profile?: BusinessProfile) {
-  return {
-    headline: profile?.businessName || "Your Business",
-    subheading: "Quality Service You Can Trust",
-    description: "Experience the best service in your community. We're here to serve you with excellence and African hospitality.",
-    call_to_action: "Contact Us Now",
-    visual_direction: {
-      primary_colors: ["#FF6B35", "#F29E4C", "#EFEA5A"],
-      secondary_colors: ["#2C3E50", "#FFFFFF"],
-      typography: "Bold headlines with readable body text",
-      mood: "Professional yet approachable",
-      cultural_elements: "Warm African-inspired patterns",
-      layout_style: "Clean and community-focused"
-    },
-    marketing_psychology: "Builds trust through community values and quality promise",
-    performance_score: 75
-  }
 }

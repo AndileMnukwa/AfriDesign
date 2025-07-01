@@ -28,7 +28,7 @@ const PosterGenerator = () => {
     setIsLoading(true);
     
     try {
-      // Generate enhanced AI content
+      // Generate enhanced AI content - no fallbacks, pure AI
       console.log('Calling generateEnhancedPosterContent...');
       const enhancedContent = await generateEnhancedPosterContent(formData);
       console.log('Enhanced AI content generated successfully:', enhancedContent);
@@ -61,8 +61,8 @@ const PosterGenerator = () => {
           theme: formData.brandPersonality,
           language: formData.language,
           tone: formData.brandPersonality,
-          content: enhancedContent as any, // Cast to any for JSON compatibility
-          visual_settings: enhancedContent.visual_direction as any, // Cast to any for JSON compatibility
+          content: enhancedContent as any,
+          visual_settings: enhancedContent.visual_direction as any,
           performance_score: enhancedContent.performance_score
         })
         .select()
@@ -104,7 +104,7 @@ const PosterGenerator = () => {
               industry: formData.industry,
               cultural_context: formData.culturalContext,
               performance_score: enhancedContent.performance_score
-            } as any // Cast to any for JSON compatibility
+            } as any
           });
         console.log('Analytics tracked successfully');
       } catch (analyticsError) {
@@ -124,17 +124,23 @@ const PosterGenerator = () => {
     } catch (error) {
       console.error('Enhanced poster generation error:', error);
       
-      // Show specific error message based on error type
+      // Show specific error messages without any fallback content
       if (error instanceof Error) {
         if (error.message.includes('Authentication')) {
           toast.error("Please sign in to generate posters");
-        } else if (error.message.includes('Edge function')) {
-          toast.error("AI service temporarily unavailable. Please try again.");
+        } else if (error.message.includes('authentication failed')) {
+          toast.error("AI service configuration error. Please contact support.");
+        } else if (error.message.includes('rate limit')) {
+          toast.error("AI service is busy. Please try again in a moment.");
+        } else if (error.message.includes('temporarily unavailable')) {
+          toast.error("AI service is temporarily unavailable. Please try again.");
+        } else if (error.message.includes('malformed content')) {
+          toast.error("AI service returned invalid content. Please try again.");
         } else {
           toast.error(`Generation failed: ${error.message}`);
         }
       } else {
-        toast.error("Failed to generate poster. Please try again.");
+        toast.error("Failed to generate poster. Please check your connection and try again.");
       }
     } finally {
       setIsLoading(false);

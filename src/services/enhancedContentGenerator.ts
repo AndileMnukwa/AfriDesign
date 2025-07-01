@@ -80,12 +80,22 @@ Make it culturally authentic, conversion-optimized, memorable, and respectful of
 
     if (error) {
       console.error('Supabase function error:', error);
-      throw new Error(`Edge function error: ${error.message}`);
+      throw new Error(`AI service error: ${error.message}`);
     }
 
-    if (!data || !data.content) {
-      console.error('No content received from edge function:', data);
-      throw new Error('No content received from AI service');
+    if (!data) {
+      console.error('No data received from edge function');
+      throw new Error('AI service returned no data');
+    }
+
+    if (data.error) {
+      console.error('Edge function returned error:', data.error);
+      throw new Error(data.error);
+    }
+
+    if (!data.content) {
+      console.error('No content in response:', data);
+      throw new Error('AI service returned invalid response format');
     }
 
     console.log('Enhanced content generated successfully:', data.content);
@@ -100,10 +110,11 @@ Make it culturally authentic, conversion-optimized, memorable, and respectful of
       performance_score: performanceScore
     };
   } catch (error) {
-    console.error('Enhanced content generation error:', error);
+    console.error('Enhanced content generation failed:', error);
     
-    // Return fallback content with African context
-    return getFallbackContent(profile);
+    // Re-throw the error without any fallback content
+    // This ensures users see the real issue instead of generic content
+    throw error;
   }
 };
 
@@ -126,48 +137,6 @@ const calculatePerformanceScore = (content: any, profile: BusinessProfile): numb
   if (content.visual_direction?.primary_colors?.length >= 3) score += 15;
   
   return Math.min(score, 100);
-};
-
-const getFallbackContent = (profile: BusinessProfile): EnhancedPosterContent => {
-  const industrySpecificContent = {
-    food: {
-      headline: "Taste Home",
-      subheading: "Authentic flavors, community spirit",
-      description: "Experience traditional recipes that bring families together. Made with love for your community.",
-      colors: ["#FF6B35", "#F29E4C", "#EFEA5A"]
-    },
-    retail: {
-      headline: "Shop Smart",
-      subheading: "Quality products, fair prices",
-      description: "Your trusted neighborhood store. Supporting local families with quality goods at honest prices.",
-      colors: ["#16537e", "#f39c12", "#e74c3c"]
-    },
-    tech: {
-      headline: "Tech Forward",
-      subheading: "Innovation meets community",
-      description: "Bringing cutting-edge technology to serve our community's growing digital needs.",
-      colors: ["#3498db", "#9b59b6", "#1abc9c"]
-    }
-  };
-
-  const content = industrySpecificContent[profile.industry as keyof typeof industrySpecificContent] || industrySpecificContent.retail;
-
-  return {
-    headline: content.headline,
-    subheading: content.subheading,
-    description: content.description,
-    call_to_action: "Contact Us Now",
-    visual_direction: {
-      primary_colors: content.colors,
-      secondary_colors: ["#2C3E50", "#FFFFFF"],
-      typography: "Bold headlines with readable Ubuntu font",
-      mood: "Professional yet warm and approachable",
-      cultural_elements: "Warm African-inspired patterns and community symbols",
-      layout_style: "Clean design with community-focused imagery"
-    },
-    marketing_psychology: "Builds trust through community values, Ubuntu philosophy, and authentic local connection",
-    performance_score: 75
-  };
 };
 
 export const getIndustrySpecificPromptEnhancements = (industry: string): string => {
