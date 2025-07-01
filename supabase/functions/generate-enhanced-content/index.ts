@@ -25,35 +25,56 @@ serve(async (req) => {
   try {
     const { prompt, businessProfile } = await req.json()
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     
-    if (!openAIApiKey) {
-      console.error('OPENAI_API_KEY not configured')
+    if (!geminiApiKey) {
+      console.error('GEMINI_API_KEY not configured')
       throw new Error('AI service configuration error - missing API key')
     }
 
-    console.log('Calling OpenAI API with business profile:', businessProfile?.businessName)
+    console.log('Calling Google Gemini API with business profile:', businessProfile?.businessName)
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAIApiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{
-          role: 'user',
-          content: prompt
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
         }],
-        max_tokens: 2000,
-        temperature: 0.7
+        generationConfig: {
+          temperature: 0.7,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          }
+        ]
       })
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`OpenAI API error: ${response.status} - ${errorText}`)
+      console.error(`Gemini API error: ${response.status} - ${errorText}`)
       
       if (response.status === 401) {
         throw new Error('AI service authentication failed - please check API key configuration')
@@ -68,17 +89,17 @@ serve(async (req) => {
 
     const data = await response.json()
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-      console.error('Invalid response from OpenAI:', data)
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0] || !data.candidates[0].content.parts[0].text) {
+      console.error('Invalid response from Gemini:', data)
       throw new Error('AI service returned invalid response')
     }
 
-    const content = data.choices[0].message.content
+    const content = data.candidates[0].content.parts[0].text
 
-    // Parse the JSON response from OpenAI
+    // Parse the JSON response from Gemini
     let parsedContent
     try {
-      // Extract JSON from the response (GPT sometimes adds explanatory text)
+      // Extract JSON from the response (Gemini sometimes adds explanatory text)
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         parsedContent = JSON.parse(jsonMatch[0])
@@ -86,7 +107,7 @@ serve(async (req) => {
         parsedContent = JSON.parse(content)
       }
     } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', content)
+      console.error('Failed to parse Gemini response:', content)
       throw new Error('AI service returned malformed content - please try again')
     }
 

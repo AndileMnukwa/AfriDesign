@@ -98,7 +98,7 @@ Make it culturally authentic, conversion-optimized, memorable, and respectful of
       throw new Error('AI service returned invalid response format');
     }
 
-    console.log('Enhanced content generated successfully:', data.content);
+    console.log('Enhanced content generated successfully with Gemini:', data.content);
     
     const content = data.content;
     
