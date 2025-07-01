@@ -24,6 +24,7 @@ interface EnhancedPosterContent {
   };
   marketing_psychology: string;
   performance_score: number;
+  [key: string]: any; // Add index signature for JSON compatibility
 }
 
 export const generateEnhancedPosterContent = async (profile: BusinessProfile): Promise<EnhancedPosterContent> => {

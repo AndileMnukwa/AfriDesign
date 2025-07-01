@@ -48,8 +48,8 @@ const PosterGenerator = () => {
             theme: formData.brandPersonality,
             language: formData.language,
             tone: formData.brandPersonality,
-            content: enhancedContent,
-            visual_settings: enhancedContent.visual_direction,
+            content: enhancedContent as any, // Cast to any for JSON compatibility
+            visual_settings: enhancedContent.visual_direction as any, // Cast to any for JSON compatibility
             performance_score: enhancedContent.performance_score
           })
           .select()
@@ -87,7 +87,7 @@ const PosterGenerator = () => {
               industry: formData.industry,
               cultural_context: formData.culturalContext,
               performance_score: enhancedContent.performance_score
-            }
+            } as any // Cast to any for JSON compatibility
           });
 
         toast.success("🎉 Your AI-powered poster is ready!");
