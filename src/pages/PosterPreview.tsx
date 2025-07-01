@@ -1,11 +1,14 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Share2, Edit, Sparkles, Palette, Type, Image } from "lucide-react";
+import { ArrowLeft, Download, Share2, Edit, Sparkles, Palette, Type, Image, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { exportPosterToPDF } from "@/utils/pdfExport";
+import { getIndustryImages, getCulturalImage } from "@/services/imageService";
+import ImageCustomizer from "@/components/ImageCustomizer";
 
 const PosterPreview = () => {
   const location = useLocation();
@@ -16,6 +19,24 @@ const PosterPreview = () => {
     navigate("/poster");
     return null;
   }
+
+  // Initialize customizable state
+  const initialImages = {
+    hero: generatedContent.visual_direction?.hero_image || { url: '', alt: '' },
+    supporting: generatedContent.visual_direction?.supporting_image || { url: '', alt: '' },
+    cultural: generatedContent.visual_direction?.cultural_texture || { url: '', alt: '' }
+  };
+
+  const [selectedImages, setSelectedImages] = useState(initialImages);
+  const [selectedLayout, setSelectedLayout] = useState('hero-top');
+  const [showCustomizer, setShowCustomizer] = useState(false);
+
+  const handleImageChange = (type: 'hero' | 'supporting' | 'cultural', image: { url: string; alt: string }) => {
+    setSelectedImages(prev => ({
+      ...prev,
+      [type]: image
+    }));
+  };
 
   const handleDownload = async () => {
     try {
@@ -42,12 +63,156 @@ const PosterPreview = () => {
   };
 
   const primaryColors = generatedContent.visual_direction?.primary_colors || ['#2563eb', '#7c3aed', '#059669'];
-  const gradientStyle = {
-    background: `linear-gradient(135deg, ${primaryColors[0]} 0%, ${primaryColors[1]} 50%, ${primaryColors[2]} 100%)`
+  const secondaryColors = generatedContent.visual_direction?.secondary_colors || ['#f59e0b', '#ef4444'];
+  
+  const dynamicGradient = {
+    background: `linear-gradient(135deg, ${primaryColors[0]} 0%, ${primaryColors[1]} 35%, ${primaryColors[2]} 70%, ${secondaryColors[0]} 100%)`
   };
 
-  const heroImage = generatedContent.visual_direction?.hero_image;
-  const supportingImage = generatedContent.visual_direction?.supporting_image;
+  const renderPosterLayout = () => {
+    const commonClasses = "transition-all duration-300";
+    
+    switch (selectedLayout) {
+      case 'hero-left':
+        return (
+          <div className="flex min-h-[600px]">
+            <div className="w-1/2 relative overflow-hidden">
+              <img 
+                src={selectedImages.hero.url} 
+                alt={selectedImages.hero.alt}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0" style={dynamicGradient} className="opacity-80"></div>
+            </div>
+            <div className="w-1/2 p-8 flex flex-col justify-center" style={{ backgroundColor: primaryColors[0] }}>
+              <div className="text-white space-y-4">
+                <h1 className="text-4xl font-bold">{generatedContent.headline}</h1>
+                <p className="text-xl opacity-90">{generatedContent.subheading}</p>
+                <p className="text-lg opacity-80">{generatedContent.description}</p>
+                <div className="pt-4">
+                  <span className="bg-white text-gray-800 px-6 py-3 rounded-full font-semibold">
+                    {generatedContent.call_to_action}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'split':
+        return (
+          <div className="min-h-[600px]" style={dynamicGradient}>
+            <div className="grid md:grid-cols-2 gap-0 min-h-[600px]">
+              <div className="p-8 flex flex-col justify-center text-white">
+                <div className="space-y-6">
+                  <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
+                    {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)}
+                  </Badge>
+                  <h1 className="text-5xl font-bold leading-tight">{generatedContent.headline}</h1>
+                  <p className="text-2xl font-light">{generatedContent.subheading}</p>
+                  <p className="text-lg opacity-90">{generatedContent.description}</p>
+                  <div className="pt-4">
+                    <span className="bg-white text-gray-800 px-8 py-4 rounded-full font-bold text-lg">
+                      {generatedContent.call_to_action}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="relative overflow-hidden">
+                <img 
+                  src={selectedImages.hero.url} 
+                  alt={selectedImages.hero.alt}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                  <h3 className="text-white text-2xl font-bold">{formData.businessName}</h3>
+                  <p className="text-white/90">{formData.services}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'overlay':
+        return (
+          <div className="relative min-h-[600px] overflow-hidden">
+            <img 
+              src={selectedImages.hero.url} 
+              alt={selectedImages.hero.alt}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0" style={dynamicGradient} className="opacity-85"></div>
+            <div className="relative z-10 p-12 h-full flex flex-col justify-center items-center text-center text-white">
+              <div className="max-w-4xl space-y-8">
+                <Badge className="bg-white/20 text-white border-white/30 px-6 py-3 text-lg">
+                  {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)} • {formData.culturalContext?.charAt(0).toUpperCase() + formData.culturalContext?.slice(1)}
+                </Badge>
+                <h1 className="text-6xl font-bold leading-tight">{generatedContent.headline}</h1>
+                <p className="text-3xl font-light">{generatedContent.subheading}</p>
+                <p className="text-xl opacity-90 max-w-2xl mx-auto">{generatedContent.description}</p>
+                <div className="pt-6">
+                  <span className="bg-white text-gray-800 px-10 py-5 rounded-full font-bold text-xl">
+                    {generatedContent.call_to_action}
+                  </span>
+                </div>
+                <div className="pt-8 border-t border-white/30">
+                  <h3 className="text-3xl font-bold">{formData.businessName}</h3>
+                  <p className="text-xl opacity-90">{formData.services}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default: // hero-top
+        return (
+          <div className="min-h-[600px]">
+            <div className="relative overflow-hidden h-80">
+              <img 
+                src={selectedImages.hero.url} 
+                alt={selectedImages.hero.alt}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0" style={dynamicGradient} className="opacity-80"></div>
+              <div className="absolute inset-0 flex items-center justify-center text-center text-white p-8">
+                <div className="space-y-6">
+                  <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
+                    {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)}
+                  </Badge>
+                  <h1 className="text-5xl font-bold">{generatedContent.headline}</h1>
+                  <p className="text-2xl font-light">{generatedContent.subheading}</p>
+                  <span className="inline-block bg-white text-gray-800 px-8 py-3 rounded-full font-bold">
+                    {generatedContent.call_to_action}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-8" style={{ backgroundColor: secondaryColors[0] }}>
+              <div className="grid md:grid-cols-2 gap-8 items-center text-white">
+                <div className="space-y-4">
+                  <p className="text-xl leading-relaxed">{generatedContent.description}</p>
+                  <div className="pt-4">
+                    <h3 className="text-2xl font-bold">{formData.businessName}</h3>
+                    <p className="text-lg opacity-90">{formData.services}</p>
+                  </div>
+                </div>
+                {selectedImages.supporting.url && (
+                  <div className="relative">
+                    <img 
+                      src={selectedImages.supporting.url} 
+                      alt={selectedImages.supporting.alt}
+                      className="w-full h-64 object-cover rounded-xl shadow-lg"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
@@ -68,119 +233,45 @@ const PosterPreview = () => {
               <span className="text-xl font-semibold text-gray-800">Professional Poster</span>
             </div>
           </div>
+          <Button
+            onClick={() => setShowCustomizer(!showCustomizer)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Customize
+          </Button>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid lg:grid-cols-4 gap-8">
           {/* Professional Poster Preview */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Professional Poster</h2>
               <p className="text-gray-600">AI-crafted for maximum impact</p>
             </div>
             
             <Card className="shadow-2xl overflow-hidden rounded-2xl border-0" id="poster-content">
-              {/* Hero Section with Background Image */}
-              <div className="relative overflow-hidden min-h-[400px]">
-                {/* Background Image */}
-                {heroImage && (
-                  <div className="absolute inset-0">
-                    <img 
-                      src={heroImage.url} 
-                      alt={heroImage.alt}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to gradient if image fails to load
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
-                  </div>
-                )}
-                
-                {/* Gradient Fallback */}
-                <div className="absolute inset-0" style={heroImage ? {} : gradientStyle}>
-                  {/* Subtle geometric pattern overlay */}
-                  <div className="absolute inset-0 opacity-10">
-                    <svg width="100%" height="100%" viewBox="0 0 200 200" className="fill-current text-white">
-                      <defs>
-                        <pattern id="geometric-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                          <circle cx="20" cy="20" r="3" fill="currentColor" opacity="0.3"/>
-                          <rect x="10" y="10" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2"/>
-                        </pattern>
-                      </defs>
-                      <rect width="100%" height="100%" fill="url(#geometric-pattern)"/>
-                    </svg>
-                  </div>
-                </div>
-                
-                <div className="relative z-10 p-12 text-center text-white flex flex-col justify-center min-h-[400px]">
-                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6 mx-auto">
-                    {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)} • {formData.culturalContext?.charAt(0).toUpperCase() + formData.culturalContext?.slice(1)}
-                  </div>
-                  
-                  <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight tracking-tight">
-                    {generatedContent.headline}
-                  </h1>
-                  
-                  <p className="text-xl md:text-2xl font-light mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
-                    {generatedContent.subheading}
-                  </p>
-                  
-                  <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 mx-auto">
-                    <span className="text-lg font-semibold">
-                      {generatedContent.call_to_action}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Content Section with Supporting Image */}
-              <CardContent className="p-12 bg-white">
-                <div className="max-w-3xl mx-auto">
-                  <div className="grid md:grid-cols-2 gap-8 items-center mb-8">
-                    <div>
-                      <p className="text-xl text-gray-700 leading-relaxed font-light">
-                        {generatedContent.description}
-                      </p>
-                    </div>
-                    
-                    {/* Supporting Image */}
-                    {supportingImage && (
-                      <div className="relative">
-                        <img 
-                          src={supportingImage.url} 
-                          alt={supportingImage.alt}
-                          className="w-full h-48 object-cover rounded-xl shadow-lg"
-                          onError={(e) => {
-                            // Hide if image fails to load
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl"></div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Business Name Section */}
-                  <div className="border-t border-gray-100 pt-8">
-                    <div className="text-center">
-                      <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                        {formData.businessName}
-                      </h3>
-                      <p className="text-gray-600 font-medium">
-                        {formData.services}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+              {renderPosterLayout()}
             </Card>
           </div>
 
           {/* Enhanced Sidebar */}
           <div className="space-y-6">
+            {/* Image Customizer (Toggleable) */}
+            {showCustomizer && (
+              <ImageCustomizer
+                industry={formData.industry || 'services'}
+                culturalContext={formData.culturalContext || 'urban'}
+                selectedImages={selectedImages}
+                onImageChange={handleImageChange}
+                onLayoutChange={setSelectedLayout}
+                selectedLayout={selectedLayout}
+              />
+            )}
+
             {/* Performance Score */}
             {generatedContent.performance_score && (
               <Card className="border-0 shadow-lg">
@@ -208,136 +299,44 @@ const PosterPreview = () => {
               </Card>
             )}
 
-            {/* Business Profile */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg text-gray-800">Business Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Industry</span>
-                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Personality</span>
-                    <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                      {formData.brandPersonality?.charAt(0).toUpperCase() + formData.brandPersonality?.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Context</span>
-                    <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-                      {formData.culturalContext?.charAt(0).toUpperCase() + formData.culturalContext?.slice(1)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-600">Language</span>
-                    <Badge variant="secondary" className="bg-orange-50 text-orange-700 border-orange-200">
-                      {formData.language?.charAt(0).toUpperCase() + formData.language?.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Visual Elements Card */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
-                  <Image className="w-5 h-5" />
-                  Visual Elements
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {heroImage && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600 mb-2 block">Hero Image</span>
-                      <div className="w-full h-20 rounded-lg overflow-hidden">
-                        <img 
-                          src={heroImage.url} 
-                          alt={heroImage.alt}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {supportingImage && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600 mb-2 block">Supporting Image</span>
-                      <div className="w-full h-20 rounded-lg overflow-hidden">
-                        <img 
-                          src={supportingImage.url} 
-                          alt={supportingImage.alt}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Color Palette */}
             {generatedContent.visual_direction?.primary_colors && (
               <Card className="border-0 shadow-lg">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
                     <Palette className="w-5 h-5" />
-                    Color Palette
+                    Active Colors
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-3">
                     <div>
-                      <span className="text-sm font-medium text-gray-600 mb-2 block">Primary Colors</span>
+                      <span className="text-sm font-medium text-gray-600 mb-2 block">Primary Palette</span>
                       <div className="flex space-x-2">
-                        {generatedContent.visual_direction.primary_colors.map((color, index) => (
+                        {primaryColors.map((color, index) => (
                           <div
                             key={index}
-                            className="w-8 h-8 rounded-lg border border-gray-200 shadow-sm"
+                            className="w-10 h-10 rounded-lg border border-gray-200 shadow-sm"
                             style={{ backgroundColor: color }}
                             title={color}
                           />
                         ))}
                       </div>
                     </div>
-                    {generatedContent.visual_direction.secondary_colors && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-600 mb-2 block">Secondary Colors</span>
-                        <div className="flex space-x-2">
-                          {generatedContent.visual_direction.secondary_colors.map((color, index) => (
-                            <div
-                              key={index}
-                              className="w-8 h-8 rounded-lg border border-gray-200 shadow-sm"
-                              style={{ backgroundColor: color }}
-                              title={color}
-                            />
-                          ))}
-                        </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600 mb-2 block">Accent Colors</span>
+                      <div className="flex space-x-2">
+                        {secondaryColors.map((color, index) => (
+                          <div
+                            key={index}
+                            className="w-10 h-10 rounded-lg border border-gray-200 shadow-sm"
+                            style={{ backgroundColor: color }}
+                            title={color}
+                          />
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Typography */}
-            {generatedContent.visual_direction?.typography && (
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
-                    <Type className="w-5 h-5" />
-                    Typography
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {generatedContent.visual_direction.typography}
-                  </p>
                 </CardContent>
               </Card>
             )}

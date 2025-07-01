@@ -6,8 +6,8 @@ interface ImageSuggestion {
   industry: string;
 }
 
-// Industry-specific image suggestions with placeholder images
-const INDUSTRY_IMAGES = {
+// Expanded industry-specific image suggestions with multiple options per industry
+export const INDUSTRY_IMAGES = {
   food: {
     hero: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&h=600&fit=crop',
     supporting: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop',
@@ -51,7 +51,7 @@ const INDUSTRY_IMAGES = {
 };
 
 // African cultural context images
-const CULTURAL_IMAGES = {
+export const CULTURAL_IMAGES = {
   urban: {
     texture: 'https://images.unsplash.com/photo-1573160813959-c9157a888bb4?w=800&h=600&fit=crop',
     alt: 'Urban African cityscape'
