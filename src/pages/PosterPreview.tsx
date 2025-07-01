@@ -46,6 +46,9 @@ const PosterPreview = () => {
     background: `linear-gradient(135deg, ${primaryColors[0]} 0%, ${primaryColors[1]} 50%, ${primaryColors[2]} 100%)`
   };
 
+  const heroImage = generatedContent.visual_direction?.hero_image;
+  const supportingImage = generatedContent.visual_direction?.supporting_image;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Header */}
@@ -78,23 +81,42 @@ const PosterPreview = () => {
             </div>
             
             <Card className="shadow-2xl overflow-hidden rounded-2xl border-0" id="poster-content">
-              {/* Modern Header Section */}
-              <div className="relative overflow-hidden" style={gradientStyle}>
-                {/* Subtle geometric pattern overlay */}
-                <div className="absolute inset-0 opacity-10">
-                  <svg width="100%" height="100%" viewBox="0 0 200 200" className="fill-current text-white">
-                    <defs>
-                      <pattern id="geometric-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <circle cx="20" cy="20" r="3" fill="currentColor" opacity="0.3"/>
-                        <rect x="10" y="10" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2"/>
-                      </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#geometric-pattern)"/>
-                  </svg>
+              {/* Hero Section with Background Image */}
+              <div className="relative overflow-hidden min-h-[400px]">
+                {/* Background Image */}
+                {heroImage && (
+                  <div className="absolute inset-0">
+                    <img 
+                      src={heroImage.url} 
+                      alt={heroImage.alt}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to gradient if image fails to load
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30"></div>
+                  </div>
+                )}
+                
+                {/* Gradient Fallback */}
+                <div className="absolute inset-0" style={heroImage ? {} : gradientStyle}>
+                  {/* Subtle geometric pattern overlay */}
+                  <div className="absolute inset-0 opacity-10">
+                    <svg width="100%" height="100%" viewBox="0 0 200 200" className="fill-current text-white">
+                      <defs>
+                        <pattern id="geometric-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                          <circle cx="20" cy="20" r="3" fill="currentColor" opacity="0.3"/>
+                          <rect x="10" y="10" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.2"/>
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#geometric-pattern)"/>
+                    </svg>
+                  </div>
                 </div>
                 
-                <div className="relative z-10 p-12 text-center text-white">
-                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
+                <div className="relative z-10 p-12 text-center text-white flex flex-col justify-center min-h-[400px]">
+                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6 mx-auto">
                     {formData.industry?.charAt(0).toUpperCase() + formData.industry?.slice(1)} • {formData.culturalContext?.charAt(0).toUpperCase() + formData.culturalContext?.slice(1)}
                   </div>
                   
@@ -106,7 +128,7 @@ const PosterPreview = () => {
                     {generatedContent.subheading}
                   </p>
                   
-                  <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                  <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 mx-auto">
                     <span className="text-lg font-semibold">
                       {generatedContent.call_to_action}
                     </span>
@@ -114,13 +136,31 @@ const PosterPreview = () => {
                 </div>
               </div>
               
-              {/* Clean Content Section */}
+              {/* Content Section with Supporting Image */}
               <CardContent className="p-12 bg-white">
                 <div className="max-w-3xl mx-auto">
-                  <div className="text-center mb-8">
-                    <p className="text-xl text-gray-700 leading-relaxed font-light">
-                      {generatedContent.description}
-                    </p>
+                  <div className="grid md:grid-cols-2 gap-8 items-center mb-8">
+                    <div>
+                      <p className="text-xl text-gray-700 leading-relaxed font-light">
+                        {generatedContent.description}
+                      </p>
+                    </div>
+                    
+                    {/* Supporting Image */}
+                    {supportingImage && (
+                      <div className="relative">
+                        <img 
+                          src={supportingImage.url} 
+                          alt={supportingImage.alt}
+                          className="w-full h-48 object-cover rounded-xl shadow-lg"
+                          onError={(e) => {
+                            // Hide if image fails to load
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl"></div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Business Name Section */}
@@ -199,6 +239,44 @@ const PosterPreview = () => {
                       {formData.language?.charAt(0).toUpperCase() + formData.language?.slice(1)}
                     </Badge>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Visual Elements Card */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg text-gray-800">
+                  <Image className="w-5 h-5" />
+                  Visual Elements
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  {heroImage && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600 mb-2 block">Hero Image</span>
+                      <div className="w-full h-20 rounded-lg overflow-hidden">
+                        <img 
+                          src={heroImage.url} 
+                          alt={heroImage.alt}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {supportingImage && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600 mb-2 block">Supporting Image</span>
+                      <div className="w-full h-20 rounded-lg overflow-hidden">
+                        <img 
+                          src={supportingImage.url} 
+                          alt={supportingImage.alt}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { getIndustryImages, getCulturalImage } from "./imageService";
 
 interface BusinessProfile {
   businessName: string;
@@ -23,6 +23,18 @@ interface EnhancedPosterContent {
     mood: string;
     cultural_elements: string;
     layout_style: string;
+    hero_image?: {
+      url: string;
+      alt: string;
+    };
+    supporting_image?: {
+      url: string;
+      alt: string;
+    };
+    cultural_texture?: {
+      url: string;
+      alt: string;
+    };
   };
   marketing_psychology: string;
   performance_score: number;
@@ -101,6 +113,26 @@ Make it culturally authentic, conversion-optimized, memorable, and respectful of
     console.log('Enhanced content generated successfully with Gemini:', data.content);
     
     const content = data.content;
+    
+    // Add professional images based on industry and cultural context
+    const industryImages = getIndustryImages(profile.industry);
+    const culturalImage = getCulturalImage(profile.culturalContext);
+    
+    // Enhance content with image data
+    content.visual_direction.hero_image = {
+      url: industryImages[0]?.url,
+      alt: industryImages[0]?.alt
+    };
+    
+    content.visual_direction.supporting_image = {
+      url: industryImages[1]?.url,
+      alt: industryImages[1]?.alt
+    };
+    
+    content.visual_direction.cultural_texture = {
+      url: culturalImage.texture,
+      alt: culturalImage.alt
+    };
     
     // Calculate performance score based on content quality metrics
     const performanceScore = calculatePerformanceScore(content, profile);
