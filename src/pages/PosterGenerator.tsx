@@ -24,59 +24,76 @@ const PosterGenerator = () => {
   const navigate = useNavigate();
 
   const handleGenerate = async (formData: EnhancedFormData) => {
-    console.log('Generating enhanced poster with:', formData);
+    console.log('Starting enhanced poster generation with:', formData);
     setIsLoading(true);
     
     try {
       // Generate enhanced AI content
+      console.log('Calling generateEnhancedPosterContent...');
       const enhancedContent = await generateEnhancedPosterContent(formData);
-      console.log('Enhanced AI content generated:', enhancedContent);
+      console.log('Enhanced AI content generated successfully:', enhancedContent);
       
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (user) {
-        // Save poster to database with enhanced metadata
-        const { data: posterData, error: posterError } = await supabase
-          .from('posters')
-          .insert({
-            user_id: user.id,
-            title: enhancedContent.headline,
-            slogan: enhancedContent.subheading,
-            description: enhancedContent.description,
-            business_name: formData.businessName,
-            theme: formData.brandPersonality,
-            language: formData.language,
-            tone: formData.brandPersonality,
-            content: enhancedContent as any, // Cast to any for JSON compatibility
-            visual_settings: enhancedContent.visual_direction as any, // Cast to any for JSON compatibility
-            performance_score: enhancedContent.performance_score
-          })
-          .select()
-          .single();
+      if (userError) {
+        console.error('User authentication error:', userError);
+        throw new Error('Authentication required to save poster');
+      }
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        throw new Error('Please sign in to save your poster');
+      }
 
-        if (posterError) {
-          throw posterError;
-        }
+      console.log('Authenticated user found:', user.id);
+      
+      // Save poster to database with enhanced metadata
+      console.log('Saving poster to database...');
+      const { data: posterData, error: posterError } = await supabase
+        .from('posters')
+        .insert({
+          user_id: user.id,
+          title: enhancedContent.headline,
+          slogan: enhancedContent.subheading,
+          description: enhancedContent.description,
+          business_name: formData.businessName,
+          theme: formData.brandPersonality,
+          language: formData.language,
+          tone: formData.brandPersonality,
+          content: enhancedContent as any, // Cast to any for JSON compatibility
+          visual_settings: enhancedContent.visual_direction as any, // Cast to any for JSON compatibility
+          performance_score: enhancedContent.performance_score
+        })
+        .select()
+        .single();
 
-        // Update user profile with business intelligence
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            user_id: user.id,
-            business_name: formData.businessName,
-            industry: formData.industry,
-            target_audience: formData.targetAudience,
-            brand_personality: formData.brandPersonality,
-            cultural_context: formData.culturalContext,
-            preferred_language: formData.language
-          });
+      if (posterError) {
+        console.error('Database insert error:', posterError);
+        throw new Error(`Failed to save poster: ${posterError.message}`);
+      }
 
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-        }
+      console.log('Poster saved successfully:', posterData);
 
-        // Track analytics event
+      // Update user profile with business intelligence
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          business_name: formData.businessName,
+          industry: formData.industry,
+          target_audience: formData.targetAudience,
+          brand_personality: formData.brandPersonality,
+          cultural_context: formData.culturalContext,
+          preferred_language: formData.language
+        });
+
+      if (profileError) {
+        console.warn('Profile update error (non-critical):', profileError);
+      }
+
+      // Track analytics event
+      try {
         await supabase
           .from('poster_analytics')
           .insert({
@@ -89,21 +106,36 @@ const PosterGenerator = () => {
               performance_score: enhancedContent.performance_score
             } as any // Cast to any for JSON compatibility
           });
-
-        toast.success("🎉 Your AI-powered poster is ready!");
-        
-        // Navigate to enhanced preview
-        navigate("/poster-preview", {
-          state: {
-            formData,
-            generatedContent: enhancedContent,
-            posterId: posterData.id
-          }
-        });
+        console.log('Analytics tracked successfully');
+      } catch (analyticsError) {
+        console.warn('Analytics tracking failed (non-critical):', analyticsError);
       }
+
+      toast.success("🎉 Your AI-powered poster is ready!");
+      
+      // Navigate to enhanced preview
+      navigate("/poster-preview", {
+        state: {
+          formData,
+          generatedContent: enhancedContent,
+          posterId: posterData.id
+        }
+      });
     } catch (error) {
       console.error('Enhanced poster generation error:', error);
-      toast.error("Failed to generate poster. Please try again.");
+      
+      // Show specific error message based on error type
+      if (error instanceof Error) {
+        if (error.message.includes('Authentication')) {
+          toast.error("Please sign in to generate posters");
+        } else if (error.message.includes('Edge function')) {
+          toast.error("AI service temporarily unavailable. Please try again.");
+        } else {
+          toast.error(`Generation failed: ${error.message}`);
+        }
+      } else {
+        toast.error("Failed to generate poster. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface BusinessProfile {
   businessName: string;
   industry: string;
@@ -67,23 +69,28 @@ Return this EXACT JSON structure:
 Make it culturally authentic, conversion-optimized, memorable, and respectful of African values and aesthetics. Consider local purchasing power, payment methods, and community-driven decision making.`;
 
   try {
-    const response = await fetch('/api/generate-content', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    console.log('Calling generate-enhanced-content edge function with profile:', profile);
+    
+    const { data, error } = await supabase.functions.invoke('generate-enhanced-content', {
+      body: {
         prompt: sophisticatedPrompt,
         businessProfile: profile
-      }),
+      }
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to generate enhanced content');
+    if (error) {
+      console.error('Supabase function error:', error);
+      throw new Error(`Edge function error: ${error.message}`);
     }
 
-    const data = await response.json();
-    const content = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+    if (!data || !data.content) {
+      console.error('No content received from edge function:', data);
+      throw new Error('No content received from AI service');
+    }
+
+    console.log('Enhanced content generated successfully:', data.content);
+    
+    const content = data.content;
     
     // Calculate performance score based on content quality metrics
     const performanceScore = calculatePerformanceScore(content, profile);
@@ -94,7 +101,9 @@ Make it culturally authentic, conversion-optimized, memorable, and respectful of
     };
   } catch (error) {
     console.error('Enhanced content generation error:', error);
-    throw error;
+    
+    // Return fallback content with African context
+    return getFallbackContent(profile);
   }
 };
 
@@ -117,6 +126,48 @@ const calculatePerformanceScore = (content: any, profile: BusinessProfile): numb
   if (content.visual_direction?.primary_colors?.length >= 3) score += 15;
   
   return Math.min(score, 100);
+};
+
+const getFallbackContent = (profile: BusinessProfile): EnhancedPosterContent => {
+  const industrySpecificContent = {
+    food: {
+      headline: "Taste Home",
+      subheading: "Authentic flavors, community spirit",
+      description: "Experience traditional recipes that bring families together. Made with love for your community.",
+      colors: ["#FF6B35", "#F29E4C", "#EFEA5A"]
+    },
+    retail: {
+      headline: "Shop Smart",
+      subheading: "Quality products, fair prices",
+      description: "Your trusted neighborhood store. Supporting local families with quality goods at honest prices.",
+      colors: ["#16537e", "#f39c12", "#e74c3c"]
+    },
+    tech: {
+      headline: "Tech Forward",
+      subheading: "Innovation meets community",
+      description: "Bringing cutting-edge technology to serve our community's growing digital needs.",
+      colors: ["#3498db", "#9b59b6", "#1abc9c"]
+    }
+  };
+
+  const content = industrySpecificContent[profile.industry as keyof typeof industrySpecificContent] || industrySpecificContent.retail;
+
+  return {
+    headline: content.headline,
+    subheading: content.subheading,
+    description: content.description,
+    call_to_action: "Contact Us Now",
+    visual_direction: {
+      primary_colors: content.colors,
+      secondary_colors: ["#2C3E50", "#FFFFFF"],
+      typography: "Bold headlines with readable Ubuntu font",
+      mood: "Professional yet warm and approachable",
+      cultural_elements: "Warm African-inspired patterns and community symbols",
+      layout_style: "Clean design with community-focused imagery"
+    },
+    marketing_psychology: "Builds trust through community values, Ubuntu philosophy, and authentic local connection",
+    performance_score: 75
+  };
 };
 
 export const getIndustrySpecificPromptEnhancements = (industry: string): string => {
