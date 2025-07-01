@@ -49,7 +49,7 @@ You must understand:
 - Mobile-first digital behavior
 - Trust-building in African communities
 
-Return this EXACT JSON structure:
+Return ONLY this JSON structure (no additional text):
 {
   "headline": "Maximum 4 words that stops scrolling dead - culturally resonant",
   "subheading": "Compelling benefit-driven tagline under 8 words with local flavor", 
