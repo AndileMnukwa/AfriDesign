@@ -45,68 +45,207 @@ export type Database = {
         }
         Relationships: []
       }
+      poster_analytics: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          poster_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          poster_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          poster_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poster_analytics_poster_id_fkey"
+            columns: ["poster_id"]
+            isOneToOne: false
+            referencedRelation: "posters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posters: {
         Row: {
           business_name: string
+          content: Json | null
           created_at: string
           description: string
+          export_formats: string[] | null
           id: string
           language: string | null
+          performance_score: number | null
           phone_number: string | null
           slogan: string
+          social_shares: number | null
           theme: string | null
           title: string
           tone: string | null
           user_id: string
+          visual_settings: Json | null
         }
         Insert: {
           business_name: string
+          content?: Json | null
           created_at?: string
           description: string
+          export_formats?: string[] | null
           id?: string
           language?: string | null
+          performance_score?: number | null
           phone_number?: string | null
           slogan: string
+          social_shares?: number | null
           theme?: string | null
           title: string
           tone?: string | null
           user_id: string
+          visual_settings?: Json | null
         }
         Update: {
           business_name?: string
+          content?: Json | null
           created_at?: string
           description?: string
+          export_formats?: string[] | null
           id?: string
           language?: string | null
+          performance_score?: number | null
           phone_number?: string | null
           slogan?: string
+          social_shares?: number | null
           theme?: string | null
           title?: string
           tone?: string | null
           user_id?: string
+          visual_settings?: Json | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          brand_personality: string | null
+          business_name: string | null
           created_at: string
+          cultural_context: string | null
           full_name: string | null
           id: string
+          industry: string | null
+          preferred_language: string | null
+          subscription_tier: string | null
+          target_audience: string | null
           user_id: string
         }
         Insert: {
+          brand_personality?: string | null
+          business_name?: string | null
           created_at?: string
+          cultural_context?: string | null
           full_name?: string | null
           id?: string
+          industry?: string | null
+          preferred_language?: string | null
+          subscription_tier?: string | null
+          target_audience?: string | null
           user_id: string
         }
         Update: {
+          brand_personality?: string | null
+          business_name?: string | null
           created_at?: string
+          cultural_context?: string | null
           full_name?: string | null
           id?: string
+          industry?: string | null
+          preferred_language?: string | null
+          subscription_tier?: string | null
+          target_audience?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          currency: string | null
+          features: Json
+          id: string
+          limits: Json
+          name: string
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          features: Json
+          id?: string
+          limits: Json
+          name: string
+          price: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          features?: Json
+          id?: string
+          limits?: Json
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_id: string | null
+          started_at: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string | null
+          started_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string | null
+          started_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
