@@ -82,7 +82,7 @@ const PosterPreview = () => {
                 alt={selectedImages.hero.alt}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0" style={dynamicGradient} className="opacity-80"></div>
+              <div className="absolute inset-0 opacity-80" style={dynamicGradient}></div>
             </div>
             <div className="w-1/2 p-8 flex flex-col justify-center" style={{ backgroundColor: primaryColors[0] }}>
               <div className="text-white space-y-4">
@@ -141,7 +141,7 @@ const PosterPreview = () => {
               alt={selectedImages.hero.alt}
               className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0" style={dynamicGradient} className="opacity-85"></div>
+            <div className="absolute inset-0 opacity-85" style={dynamicGradient}></div>
             <div className="relative z-10 p-12 h-full flex flex-col justify-center items-center text-center text-white">
               <div className="max-w-4xl space-y-8">
                 <Badge className="bg-white/20 text-white border-white/30 px-6 py-3 text-lg">
@@ -173,7 +173,7 @@ const PosterPreview = () => {
                 alt={selectedImages.hero.alt}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0" style={dynamicGradient} className="opacity-80"></div>
+              <div className="absolute inset-0 opacity-80" style={dynamicGradient}></div>
               <div className="absolute inset-0 flex items-center justify-center text-center text-white p-8">
                 <div className="space-y-6">
                   <Badge className="bg-white/20 text-white border-white/30 px-4 py-2">
