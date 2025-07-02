@@ -7,8 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, TrendingUp, Target, Palette, Globe } from "lucide-react";
+import { Sparkles, TrendingUp, Target, Palette, Globe, Image, Crown } from "lucide-react";
 import { toast } from "sonner";
+import ImageUploadZone from "@/components/ImageUploadZone";
+
+interface UploadedImage {
+  id: string;
+  file: File;
+  url: string;
+  name: string;
+  size: number;
+}
 
 interface EnhancedFormData {
   businessName: string;
@@ -18,6 +27,7 @@ interface EnhancedFormData {
   brandPersonality: string;
   culturalContext: string;
   language: string;
+  customImages: UploadedImage[];
 }
 
 interface EnhancedPosterFormProps {
@@ -74,18 +84,23 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
     targetAudience: '',
     brandPersonality: '',
     culturalContext: '',
-    language: 'english'
+    language: 'english',
+    customImages: []
   });
 
   const [formStep, setFormStep] = useState(1);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  const handleInputChange = (field: keyof EnhancedFormData, value: string) => {
+  const handleInputChange = (field: keyof EnhancedFormData, value: string | UploadedImage[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear validation errors when user starts typing
     if (validationErrors.length > 0) {
       setValidationErrors([]);
     }
+  };
+
+  const handleImagesChange = (images: UploadedImage[]) => {
+    handleInputChange('customImages', images);
   };
 
   const validateForm = (): boolean => {
@@ -217,7 +232,25 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
               </div>
             </div>
 
-            {/* Step 2: Brand & Culture */}
+            {/* Step 2: Custom Images */}
+            <div className="space-y-6 border-t pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Image className="w-5 h-5 text-orange-600" />
+                <h3 className="text-lg font-semibold">Custom Images & Branding</h3>
+                <Badge className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-200">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Premium Feature
+                </Badge>
+              </div>
+
+              {/* Image Upload Zone */}
+              <ImageUploadZone 
+                onImagesChange={handleImagesChange}
+                maxImages={5}
+              />
+            </div>
+
+            {/* Step 3: Brand & Culture */}
             <div className="space-y-6 border-t pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Palette className="w-5 h-5 text-orange-600" />
@@ -304,7 +337,7 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
             )}
 
             {/* Selected Options Summary */}
-            {(selectedIndustry || selectedPersonality || selectedContext) && (
+            {(selectedIndustry || selectedPersonality || selectedContext || formData.customImages.length > 0) && (
               <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-6">
                 <h4 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
@@ -326,6 +359,12 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
                       {selectedContext.icon} {selectedContext.label}
                     </Badge>
                   )}
+                  {formData.customImages.length > 0 && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                      <Image className="w-3 h-3 mr-1" />
+                      {formData.customImages.length} Custom Image{formData.customImages.length > 1 ? 's' : ''}
+                    </Badge>
+                  )}
                 </div>
               </div>
             )}
@@ -334,7 +373,7 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full gradient-african hover:opacity-90 text-white text-lg py-6 rounded-xl"
+              className="w-full gradient-african hover:opacity-90 text-white text-lg py-6 rounded-xl shadow-african hover-lift"
             >
               {isLoading ? (
                 <div className="flex items-center gap-3">
@@ -345,6 +384,11 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-5 h-5" />
                   Generate Professional Poster with AI
+                  {formData.customImages.length > 0 && (
+                    <Badge className="bg-white/20 text-white border-white/30 ml-2">
+                      + Custom Images
+                    </Badge>
+                  )}
                 </div>
               )}
             </Button>
