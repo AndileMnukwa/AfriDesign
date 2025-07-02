@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Download, Share2, Edit, Sparkles, Palette, Type, Image, Settings } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { exportPosterToPDF } from "@/utils/pdfExport";
+import { exportPosterToPDF, exportPosterToImage } from "@/utils/pdfExport";
 import { getIndustryImages, getCulturalImage } from "@/services/imageService";
 import ImageCustomizer from "@/components/ImageCustomizer";
 
@@ -38,27 +38,51 @@ const PosterPreview = () => {
     }));
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'png' | 'jpg' = 'pdf') => {
     try {
-      await exportPosterToPDF('poster-content', `${formData.businessName.replace(/\s+/g, '-')}-poster.pdf`);
-      toast.success("Poster downloaded successfully!");
+      const filename = `${formData.businessName.replace(/\s+/g, '-')}-poster`;
+      
+      if (format === 'pdf') {
+        await exportPosterToPDF('poster-content', `${filename}.pdf`);
+        toast.success("Poster PDF downloaded successfully!");
+      } else {
+        await exportPosterToImage('poster-content', `${filename}.${format}`, format);
+        toast.success(`Poster ${format.toUpperCase()} downloaded successfully!`);
+      }
     } catch (error) {
       console.error('Download error:', error);
       toast.error("Failed to download poster. Please try again.");
     }
   };
 
-  const handleShare = () => {
-    const shareText = `Check out my business poster: ${generatedContent.headline}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const handleShare = async (platform: 'whatsapp' | 'email' | 'copy' = 'whatsapp') => {
+    const shareText = `Check out my professional business poster: ${generatedContent.headline}\n\nCreated with SmartBiz AI - Professional Marketing Tools`;
+    const shareUrl = window.location.href;
     
-    if (navigator.share) {
-      navigator.share({
-        title: "My Business Poster",
-        text: shareText,
-      });
-    } else {
-      window.open(whatsappUrl, '_blank');
+    try {
+      if (platform === 'whatsapp') {
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`;
+        window.open(whatsappUrl, '_blank');
+      } else if (platform === 'email') {
+        const subject = encodeURIComponent('Check out my business poster!');
+        const body = encodeURIComponent(`${shareText}\n\nView it here: ${shareUrl}`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      } else if (platform === 'copy') {
+        await navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+        toast.success("Link copied to clipboard!");
+        return;
+      }
+      
+      // Fallback to native sharing if available
+      if (navigator.share && platform === 'whatsapp') {
+        navigator.share({
+          title: "My Business Poster",
+          text: shareText,
+          url: shareUrl,
+        });
+      }
+    } catch (error) {
+      toast.error("Sharing failed. Please try again.");
     }
   };
 
@@ -341,29 +365,66 @@ const PosterPreview = () => {
               </Card>
             )}
 
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button 
-                onClick={handleDownload}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 text-base py-6 rounded-xl font-medium shadow-lg"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Download High-Quality PDF
-              </Button>
+            {/* Professional Action Buttons */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => handleDownload('pdf')}
+                  className="btn-professional w-full text-base py-6 rounded-xl font-medium shadow-professional"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download PDF (Print Quality)
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => handleDownload('png')}
+                    variant="outline"
+                    className="text-sm py-3 border-2 hover:bg-blue-50"
+                  >
+                    PNG Image
+                  </Button>
+                  <Button 
+                    onClick={() => handleDownload('jpg')}
+                    variant="outline"
+                    className="text-sm py-3 border-2 hover:bg-blue-50"
+                  >
+                    JPG Image
+                  </Button>
+                </div>
+              </div>
 
-              <Button 
-                onClick={handleShare}
-                variant="outline"
-                className="w-full text-base py-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 font-medium"
-              >
-                <Share2 className="w-5 h-5 mr-2" />
-                Share via WhatsApp
-              </Button>
+              <div className="border-t pt-4 space-y-2">
+                <Button 
+                  onClick={() => handleShare('whatsapp')}
+                  className="btn-premium w-full text-base py-4 rounded-xl font-medium"
+                >
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Share on WhatsApp
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => handleShare('email')}
+                    variant="outline"
+                    className="text-sm py-3 border-2 hover:bg-green-50"
+                  >
+                    Email
+                  </Button>
+                  <Button 
+                    onClick={() => handleShare('copy')}
+                    variant="outline"
+                    className="text-sm py-3 border-2 hover:bg-green-50"
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+              </div>
 
-              <Link to="/poster">
+              <Link to="/poster" className="block">
                 <Button 
                   variant="ghost"
-                  className="w-full text-base py-6 rounded-xl hover:bg-gray-100 font-medium"
+                  className="w-full text-base py-4 rounded-xl hover:bg-gray-100 font-medium"
                 >
                   <Edit className="w-5 h-5 mr-2" />
                   Make Changes

@@ -103,6 +103,7 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
+  /* Professional Gradients */
   .gradient-african {
     background: linear-gradient(135deg, hsl(var(--orange-sunset)) 0%, hsl(var(--red-earth)) 50%, hsl(var(--gold-prosperity)) 100%);
   }
@@ -126,7 +127,32 @@ All colors MUST be HSL.
   .gradient-heritage {
     background: linear-gradient(135deg, hsl(var(--forest-green)) 0%, hsl(var(--green-nature)) 50%, hsl(var(--ochre)) 100%);
   }
-  
+
+  .gradient-premium {
+    background: linear-gradient(135deg, hsl(var(--deep-purple)) 0%, hsl(var(--blue-sky)) 100%);
+  }
+
+  .gradient-business {
+    background: linear-gradient(135deg, hsl(var(--forest-green)) 0%, hsl(var(--terracotta)) 100%);
+  }
+
+  /* Card Backgrounds */
+  .bg-card-poster {
+    background: linear-gradient(135deg, rgba(255, 126, 95, 0.1) 0%, rgba(255, 159, 67, 0.1) 100%);
+    border: 1px solid rgba(255, 126, 95, 0.2);
+  }
+
+  .bg-card-invoice {
+    background: linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(0, 123, 255, 0.1) 100%);
+    border: 1px solid rgba(46, 213, 115, 0.2);
+  }
+
+  .bg-card-analytics {
+    background: linear-gradient(135deg, rgba(142, 68, 173, 0.1) 0%, rgba(74, 144, 226, 0.1) 100%);
+    border: 1px solid rgba(142, 68, 173, 0.2);
+  }
+
+  /* Text Gradients */
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--orange-sunset)), hsl(var(--gold-prosperity)));
     -webkit-background-clip: text;
@@ -147,7 +173,15 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .text-premium-gradient {
+    background: linear-gradient(135deg, hsl(var(--deep-purple)), hsl(var(--blue-sky)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   
+  /* Professional Styling */
   .rounded-african {
     border-radius: 1.5rem;
   }
@@ -162,5 +196,57 @@ All colors MUST be HSL.
 
   .shadow-heritage {
     box-shadow: 0 12px 35px -12px hsla(var(--forest-green), 0.2);
+  }
+
+  .shadow-professional {
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+  }
+
+  .shadow-premium {
+    box-shadow: 0 25px 50px -12px rgba(142, 68, 173, 0.25);
+  }
+
+  /* Glass Effect */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Professional Button Variants */
+  .btn-professional {
+    background: linear-gradient(135deg, hsl(var(--blue-sky)) 0%, hsl(var(--green-nature)) 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-professional:hover {
+    background: linear-gradient(135deg, hsl(var(--green-nature)) 0%, hsl(var(--blue-sky)) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+  }
+
+  .btn-premium {
+    background: linear-gradient(135deg, hsl(var(--deep-purple)) 0%, hsl(var(--blue-sky)) 100%);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-premium:hover {
+    background: linear-gradient(135deg, hsl(var(--blue-sky)) 0%, hsl(var(--deep-purple)) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(142, 68, 173, 0.3);
   }
 }

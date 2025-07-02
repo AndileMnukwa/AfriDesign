@@ -69,60 +69,69 @@ const InvoicePreview = () => {
           {/* Invoice Preview */}
           <div className="lg:col-span-2">
             <Card className="shadow-2xl overflow-hidden">
-              {/* Invoice Header */}
-              <div className="gradient-nature p-6 text-white">
-                <div className="flex justify-between items-start">
+              {/* Professional Invoice Header */}
+              <div className="gradient-heritage p-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-4 -translate-x-4"></div>
+                <div className="relative z-10 flex justify-between items-start">
                   <div>
-                    <h1 className="text-3xl font-bold">INVOICE</h1>
-                    <p className="text-blue-100 mt-2">#{invoiceNumber}</p>
+                    <h1 className="text-4xl font-bold mb-2">INVOICE</h1>
+                    <div className="bg-white/20 px-4 py-2 rounded-lg inline-block">
+                      <p className="text-lg font-semibold">#{invoiceNumber}</p>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-blue-100">Date</p>
-                    <p className="font-semibold">{date}</p>
+                    <div className="bg-white/20 px-4 py-3 rounded-lg">
+                      <p className="text-sm opacity-90 mb-1">Issue Date</p>
+                      <p className="font-bold text-lg">{date}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <CardContent className="p-6 bg-white">
-                {/* Business & Client Info */}
-                <div className="grid md:grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <h3 className="font-semibold text-gray-600 mb-3">FROM</h3>
-                    <div className="space-y-1">
-                      <p className="font-bold text-lg">{businessInfo.name}</p>
-                      {businessInfo.contact && <p className="text-gray-600">{businessInfo.contact}</p>}
+              <CardContent className="p-8 bg-white">
+                {/* Professional Business & Client Info */}
+                <div className="grid md:grid-cols-2 gap-8 mb-10">
+                  <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl border border-green-100">
+                    <h3 className="font-bold text-green-800 mb-4 text-sm uppercase tracking-wide">Bill From</h3>
+                    <div className="space-y-2">
+                      <p className="font-bold text-xl text-gray-800">{businessInfo.name}</p>
+                      {businessInfo.contact && <p className="text-gray-700 font-medium">{businessInfo.contact}</p>}
                       {businessInfo.address && <p className="text-gray-600">{businessInfo.address}</p>}
                     </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-600 mb-3">TO</h3>
-                    <div className="space-y-1">
-                      <p className="font-bold text-lg">{clientInfo.name}</p>
-                      {clientInfo.contact && <p className="text-gray-600">{clientInfo.contact}</p>}
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-100">
+                    <h3 className="font-bold text-blue-800 mb-4 text-sm uppercase tracking-wide">Bill To</h3>
+                    <div className="space-y-2">
+                      <p className="font-bold text-xl text-gray-800">{clientInfo.name}</p>
+                      {clientInfo.contact && <p className="text-gray-700 font-medium">{clientInfo.contact}</p>}
                       {clientInfo.address && <p className="text-gray-600">{clientInfo.address}</p>}
                     </div>
                   </div>
                 </div>
 
-                {/* Items Table */}
-                <div className="mb-8">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
+                {/* Professional Items Table */}
+                <div className="mb-10">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-t-xl">
+                    <h3 className="text-lg font-bold text-gray-800">Invoice Items</h3>
+                  </div>
+                  <div className="overflow-x-auto border border-gray-200 rounded-b-xl">
+                    <table className="w-full border-collapse bg-white">
                       <thead>
-                        <tr className="border-b-2 border-gray-200">
-                          <th className="text-left py-3 font-semibold text-gray-600">Description</th>
-                          <th className="text-center py-3 font-semibold text-gray-600">Qty</th>
-                          <th className="text-right py-3 font-semibold text-gray-600">Price</th>
-                          <th className="text-right py-3 font-semibold text-gray-600">Total</th>
+                        <tr className="bg-gradient-to-r from-green-50 to-blue-50">
+                          <th className="text-left py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">Description</th>
+                          <th className="text-center py-4 px-4 font-bold text-gray-700 text-sm uppercase tracking-wide">Qty</th>
+                          <th className="text-right py-4 px-4 font-bold text-gray-700 text-sm uppercase tracking-wide">Unit Price</th>
+                          <th className="text-right py-4 px-6 font-bold text-gray-700 text-sm uppercase tracking-wide">Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.map((item: any, index: number) => (
-                          <tr key={index} className="border-b border-gray-100">
-                            <td className="py-3">{item.description}</td>
-                            <td className="py-3 text-center">{item.quantity}</td>
-                            <td className="py-3 text-right">R{item.price.toFixed(2)}</td>
-                            <td className="py-3 text-right font-semibold">R{(item.quantity * item.price).toFixed(2)}</td>
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                            <td className="py-4 px-6 font-medium text-gray-800">{item.description}</td>
+                            <td className="py-4 px-4 text-center font-semibold text-gray-700">{item.quantity}</td>
+                            <td className="py-4 px-4 text-right text-gray-700">R{item.price.toFixed(2)}</td>
+                            <td className="py-4 px-6 text-right font-bold text-green-600">R{(item.quantity * item.price).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -130,12 +139,13 @@ const InvoicePreview = () => {
                   </div>
                 </div>
 
-                {/* Total */}
-                <div className="flex justify-end mb-8">
-                  <div className="bg-gray-50 p-4 rounded-lg min-w-[200px]">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold">TOTAL:</span>
-                      <span className="text-2xl font-bold text-green-600">R{total.toFixed(2)}</span>
+                {/* Professional Total Section */}
+                <div className="flex justify-end mb-10">
+                  <div className="bg-gradient-to-r from-green-600 to-blue-600 p-6 rounded-2xl shadow-professional min-w-[300px]">
+                    <div className="text-center text-white">
+                      <p className="text-sm font-medium opacity-90 mb-2">Invoice Total</p>
+                      <div className="text-4xl font-bold mb-2">R{total.toFixed(2)}</div>
+                      <p className="text-sm opacity-80">ZAR (South African Rand)</p>
                     </div>
                   </div>
                 </div>
@@ -179,25 +189,24 @@ const InvoicePreview = () => {
             <div className="space-y-4">
               <Button 
                 onClick={handleDownload}
-                className="w-full gradient-nature hover:opacity-90 text-white border-0 text-lg py-6"
+                className="btn-professional w-full text-lg py-6 shadow-professional"
               >
                 <Download className="w-5 h-5 mr-2" />
-                Download Invoice (PDF)
+                Download Professional PDF
               </Button>
 
               <Button 
                 onClick={handleShare}
-                variant="outline"
-                className="w-full text-lg py-6"
+                className="btn-premium w-full text-lg py-6"
               >
                 <Share2 className="w-5 h-5 mr-2" />
                 Share via WhatsApp
               </Button>
 
-              <Link to="/invoice">
+              <Link to="/invoice" className="block">
                 <Button 
                   variant="ghost"
-                  className="w-full text-lg py-6"
+                  className="w-full text-lg py-6 hover:bg-gray-100"
                 >
                   <Edit className="w-5 h-5 mr-2" />
                   Make Changes

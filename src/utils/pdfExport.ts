@@ -10,40 +10,86 @@ export const exportPosterToPDF = async (elementId: string, filename: string) => 
     }
 
     const canvas = await html2canvas(element, {
-      scale: 2,
+      scale: 3, // Higher resolution for professional quality
       useCORS: true,
       allowTaint: true,
-      backgroundColor: '#ffffff'
+      backgroundColor: null, // Preserve transparency
+      logging: false,
+      width: element.scrollWidth,
+      height: element.scrollHeight
     });
 
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/png', 1.0); // Highest quality
+    
+    // Calculate optimal PDF dimensions based on content
+    const aspectRatio = canvas.width / canvas.height;
+    const isLandscape = aspectRatio > 1;
+    
     const pdf = new jsPDF({
-      orientation: 'portrait',
+      orientation: isLandscape ? 'landscape' : 'portrait',
       unit: 'mm',
-      format: 'a4'
+      format: 'a4',
+      compress: false
     });
 
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    const pageWidth = isLandscape ? 297 : 210;
+    const pageHeight = isLandscape ? 210 : 297;
+    
+    // Calculate image dimensions to fit page while maintaining aspect ratio
+    let imgWidth = pageWidth;
+    let imgHeight = pageWidth / aspectRatio;
+    
+    if (imgHeight > pageHeight) {
+      imgHeight = pageHeight;
+      imgWidth = pageHeight * aspectRatio;
     }
+    
+    // Center the image on the page
+    const xOffset = (pageWidth - imgWidth) / 2;
+    const yOffset = (pageHeight - imgHeight) / 2;
 
+    pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight, undefined, 'FAST');
     pdf.save(filename);
     return true;
   } catch (error) {
     console.error('PDF export error:', error);
+    throw error;
+  }
+};
+
+export const exportPosterToImage = async (elementId: string, filename: string, format: 'png' | 'jpg' = 'png') => {
+  try {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      throw new Error('Element not found');
+    }
+
+    const canvas = await html2canvas(element, {
+      scale: 4, // Very high resolution for print quality
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: format === 'jpg' ? '#ffffff' : null,
+      logging: false,
+      width: element.scrollWidth,
+      height: element.scrollHeight
+    });
+
+    // Create download link
+    const link = document.createElement('a');
+    const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+    const quality = format === 'jpg' ? 0.95 : 1.0;
+    
+    link.download = filename.replace('.pdf', `.${format}`);
+    link.href = canvas.toDataURL(mimeType, quality);
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    return true;
+  } catch (error) {
+    console.error('Image export error:', error);
     throw error;
   }
 };
