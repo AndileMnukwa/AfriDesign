@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, Image } from "lucide-react";
+import { Eye, Trash2, Image, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface PosterCardProps {
@@ -12,6 +12,11 @@ interface PosterCardProps {
     description: string;
     content: any;
     created_at: string;
+    industry?: string;
+    cultural_context?: string;
+    target_audience?: string;
+    brand_personality?: string;
+    language?: string;
   };
   onDelete: (id: string) => void;
 }
@@ -41,8 +46,11 @@ const PosterCard = ({ poster, onDelete }: PosterCardProps) => {
               formData: {
                 businessName: poster.business_name,
                 services: poster.description,
-                industry: 'services',
-                culturalContext: 'modern'
+                industry: poster.industry || 'services',
+                culturalContext: poster.cultural_context || 'modern',
+                targetAudience: poster.target_audience || '',
+                brandPersonality: poster.brand_personality || '',
+                language: poster.language || 'english'
               },
               generatedContent: poster.content || {
                 headline: poster.title,
@@ -55,6 +63,15 @@ const PosterCard = ({ poster, onDelete }: PosterCardProps) => {
             <Button size="sm" className="btn-professional w-full">
               <Eye className="w-4 h-4 mr-1" />
               View
+            </Button>
+          </Link>
+          <Link 
+            to={`/poster/edit/${poster.id}`}
+            className="flex-1"
+          >
+            <Button size="sm" variant="outline" className="w-full border-blue-200 text-blue-600 hover:bg-blue-50">
+              <Edit className="w-4 h-4 mr-1" />
+              Edit
             </Button>
           </Link>
           <Button 

@@ -12,6 +12,7 @@ import PosterGenerator from "./pages/PosterGenerator";
 import PosterPreview from "./pages/PosterPreview";
 import InvoiceGenerator from "./pages/InvoiceGenerator";
 import InvoicePreview from "./pages/InvoicePreview";
+import PremiumPage from "./pages/Premium";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/poster" element={<PosterGenerator />} />
+            <Route path="/poster/edit/:id" element={<PosterGenerator />} />
             <Route path="/poster-preview" element={<PosterPreview />} />
+            <Route path="/premium" element={<PremiumPage />} />
             <Route path="/invoice" element={<InvoiceGenerator />} />
             <Route path="/invoice-preview" element={<InvoicePreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

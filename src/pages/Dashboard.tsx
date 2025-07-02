@@ -11,6 +11,7 @@ import InvoiceCard from "@/components/dashboard/InvoiceCard";
 import EmptyState from "@/components/dashboard/EmptyState";
 import LoadingState from "@/components/dashboard/LoadingState";
 import { Button } from "@/components/ui/button";
+import { Crown } from "lucide-react";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -29,7 +30,7 @@ const Dashboard = () => {
       // Fetch posters
       const { data: postersData, error: postersError } = await supabase
         .from('posters')
-        .select('*')
+        .select('id, business_name, title, slogan, description, content, created_at, industry, cultural_context, target_audience, brand_personality, language')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
@@ -130,7 +131,15 @@ const Dashboard = () => {
           <Link to="/" className="text-2xl font-bold text-gradient">
             SmartBiz AI
           </Link>
-          <AuthButton />
+            <div className="flex items-center gap-4">
+              <Link to="/premium">
+                <Button className="btn-premium">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Upgrade
+                </Button>
+              </Link>
+              <AuthButton />
+            </div>
         </div>
       </header>
 

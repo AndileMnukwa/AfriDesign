@@ -33,6 +33,8 @@ interface EnhancedFormData {
 interface EnhancedPosterFormProps {
   onGenerate: (formData: EnhancedFormData) => void;
   isLoading: boolean;
+  initialData?: EnhancedFormData | null;
+  isEditMode?: boolean;
 }
 
 const AFRICAN_INDUSTRIES = [
@@ -76,17 +78,24 @@ const AFRICAN_LANGUAGES = [
   { value: 'amharic', label: 'Amharic', flag: '🇪🇹' },
 ];
 
-export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenerate, isLoading }) => {
-  const [formData, setFormData] = useState<EnhancedFormData>({
-    businessName: '',
-    industry: '',
-    services: '',
-    targetAudience: '',
-    brandPersonality: '',
-    culturalContext: '',
-    language: 'english',
-    customImages: []
-  });
+export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ 
+  onGenerate, 
+  isLoading, 
+  initialData, 
+  isEditMode = false 
+}) => {
+  const [formData, setFormData] = useState<EnhancedFormData>(
+    initialData || {
+      businessName: '',
+      industry: '',
+      services: '',
+      targetAudience: '',
+      brandPersonality: '',
+      culturalContext: '',
+      language: 'english',
+      customImages: []
+    }
+  );
 
   const [formStep, setFormStep] = useState(1);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -378,12 +387,12 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({ onGenera
               {isLoading ? (
                 <div className="flex items-center gap-3">
                   <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                  Creating Your AI-Powered Poster...
+                  {isEditMode ? 'Updating Your Poster...' : 'Creating Your AI-Powered Poster...'}
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-5 h-5" />
-                  Generate Professional Poster with AI
+                  {isEditMode ? 'Update Poster with AI' : 'Generate Professional Poster with AI'}
                   {formData.customImages.length > 0 && (
                     <Badge className="bg-white/20 text-white border-white/30 ml-2">
                       + Custom Images

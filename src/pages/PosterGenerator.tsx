@@ -1,13 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, TrendingUp } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Sparkles, TrendingUp, Crown } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EnhancedPosterForm } from "@/components/EnhancedPosterForm";
 import { generateEnhancedPosterContent } from "@/services/enhancedContentGenerator";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface EnhancedFormData {
   businessName: string;
@@ -17,17 +18,134 @@ interface EnhancedFormData {
   brandPersonality: string;
   culturalContext: string;
   language: string;
+  customImages: any[];
 }
 
 const PosterGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [editData, setEditData] = useState<EnhancedFormData | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (id && user) {
+      fetchPosterForEdit(id);
+    }
+  }, [id, user]);
+
+  const fetchPosterForEdit = async (posterId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('posters')
+        .select('*')
+        .eq('id', posterId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching poster:', error);
+        toast.error('Failed to load poster for editing');
+        navigate('/dashboard');
+        return;
+      }
+
+      if (data) {
+        const formData: EnhancedFormData = {
+          businessName: data.business_name,
+          industry: data.industry || 'services',
+          services: data.description,
+          targetAudience: data.target_audience || '',
+          brandPersonality: data.brand_personality || 'professional',
+          culturalContext: data.cultural_context || 'modern',
+          language: data.language || 'english',
+          customImages: Array.isArray(data.custom_images) ? data.custom_images : []
+        };
+        setEditData(formData);
+        setIsEditMode(true);
+      }
+    } catch (error) {
+      console.error('Error fetching poster for edit:', error);
+      toast.error('Failed to load poster for editing');
+      navigate('/dashboard');
+    }
+  };
+
+  const checkUsageLimits = async () => {
+    if (!user) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking usage limits:', error);
+        return true; // Allow on error to avoid blocking users
+      }
+
+      if (!data || data.subscription_tier === 'free') {
+        const monthlyPosters = data?.monthly_posters_used || 0;
+        if (monthlyPosters >= 2) {
+          toast.error('Free plan limit reached! Upgrade to Pro for unlimited posters.');
+          navigate('/premium');
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking usage limits:', error);
+      return true; // Allow on error
+    }
+  };
+
+  const updateUsageCount = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('subscribers')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching subscriber data:', error);
+        return;
+      }
+
+      const currentUsage = data?.monthly_posters_used || 0;
+
+      await supabase
+        .from('subscribers')
+        .upsert({
+          user_id: user.id,
+          email: user.email || '',
+          monthly_posters_used: currentUsage + 1,
+          subscription_tier: data?.subscription_tier || 'free'
+        });
+    } catch (error) {
+      console.error('Error updating usage count:', error);
+    }
+  };
 
   const handleGenerate = async (formData: EnhancedFormData) => {
     console.log('Starting enhanced poster generation with:', formData);
     setIsLoading(true);
     
     try {
+      // Check usage limits for free users (skip for edit mode)
+      if (!isEditMode) {
+        const canProceed = await checkUsageLimits();
+        if (!canProceed) {
+          setIsLoading(false);
+          return;
+        }
+      }
       // Generate enhanced AI content - no fallbacks, pure AI
       console.log('Calling generateEnhancedPosterContent...');
       const enhancedContent = await generateEnhancedPosterContent(formData);
@@ -48,25 +166,52 @@ const PosterGenerator = () => {
 
       console.log('Authenticated user found:', user.id);
       
-      // Save poster to database with enhanced metadata
-      console.log('Saving poster to database...');
-      const { data: posterData, error: posterError } = await supabase
-        .from('posters')
-        .insert({
-          user_id: user.id,
-          title: enhancedContent.headline,
-          slogan: enhancedContent.subheading,
-          description: enhancedContent.description,
-          business_name: formData.businessName,
-          theme: formData.brandPersonality,
-          language: formData.language,
-          tone: formData.brandPersonality,
-          content: enhancedContent as any,
-          visual_settings: enhancedContent.visual_direction as any,
-          performance_score: enhancedContent.performance_score
-        })
-        .select()
-        .single();
+      // Save or update poster to database with enhanced metadata
+      console.log(isEditMode ? 'Updating poster in database...' : 'Saving poster to database...');
+      
+      const posterPayload = {
+        user_id: user.id,
+        title: enhancedContent.headline,
+        slogan: enhancedContent.subheading,
+        description: enhancedContent.description,
+        business_name: formData.businessName,
+        industry: formData.industry,
+        target_audience: formData.targetAudience,
+        brand_personality: formData.brandPersonality,
+        cultural_context: formData.culturalContext,
+        theme: formData.brandPersonality,
+        language: formData.language,
+        tone: formData.brandPersonality,
+        content: enhancedContent as any,
+        visual_settings: enhancedContent.visual_direction as any,
+        performance_score: enhancedContent.performance_score,
+        custom_images: formData.customImages as any
+      };
+
+      let posterData;
+      let posterError;
+
+      if (isEditMode && id) {
+        // Update existing poster
+        const { data, error } = await supabase
+          .from('posters')
+          .update(posterPayload)
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+        posterData = data;
+        posterError = error;
+      } else {
+        // Create new poster
+        const { data, error } = await supabase
+          .from('posters')
+          .insert(posterPayload)
+          .select()
+          .single();
+        posterData = data;
+        posterError = error;
+      }
 
       if (posterError) {
         console.error('Database insert error:', posterError);
@@ -106,12 +251,17 @@ const PosterGenerator = () => {
               performance_score: enhancedContent.performance_score
             } as any
           });
-        console.log('Analytics tracked successfully');
+      console.log('Analytics tracked successfully');
       } catch (analyticsError) {
         console.warn('Analytics tracking failed (non-critical):', analyticsError);
       }
 
-      toast.success("🎉 Your AI-powered poster is ready!");
+      // Update usage count for new posters only
+      if (!isEditMode) {
+        await updateUsageCount();
+      }
+
+      toast.success(isEditMode ? "🎉 Your poster has been updated!" : "🎉 Your AI-powered poster is ready!");
       
       // Navigate to enhanced preview
       navigate("/poster-preview", {
@@ -204,7 +354,12 @@ const PosterGenerator = () => {
         </div>
 
         {/* Enhanced Form */}
-        <EnhancedPosterForm onGenerate={handleGenerate} isLoading={isLoading} />
+        <EnhancedPosterForm 
+          onGenerate={handleGenerate} 
+          isLoading={isLoading} 
+          initialData={editData}
+          isEditMode={isEditMode}
+        />
 
         {/* Features Showcase */}
         <div className="mt-16 grid md:grid-cols-3 gap-8">

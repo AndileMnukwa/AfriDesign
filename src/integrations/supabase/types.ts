@@ -82,17 +82,22 @@ export type Database = {
       }
       posters: {
         Row: {
+          brand_personality: string | null
           business_name: string
           content: Json | null
           created_at: string
+          cultural_context: string | null
+          custom_images: Json | null
           description: string
           export_formats: string[] | null
           id: string
+          industry: string | null
           language: string | null
           performance_score: number | null
           phone_number: string | null
           slogan: string
           social_shares: number | null
+          target_audience: string | null
           theme: string | null
           title: string
           tone: string | null
@@ -100,17 +105,22 @@ export type Database = {
           visual_settings: Json | null
         }
         Insert: {
+          brand_personality?: string | null
           business_name: string
           content?: Json | null
           created_at?: string
+          cultural_context?: string | null
+          custom_images?: Json | null
           description: string
           export_formats?: string[] | null
           id?: string
+          industry?: string | null
           language?: string | null
           performance_score?: number | null
           phone_number?: string | null
           slogan: string
           social_shares?: number | null
+          target_audience?: string | null
           theme?: string | null
           title: string
           tone?: string | null
@@ -118,17 +128,22 @@ export type Database = {
           visual_settings?: Json | null
         }
         Update: {
+          brand_personality?: string | null
           business_name?: string
           content?: Json | null
           created_at?: string
+          cultural_context?: string | null
+          custom_images?: Json | null
           description?: string
           export_formats?: string[] | null
           id?: string
+          industry?: string | null
           language?: string | null
           performance_score?: number | null
           phone_number?: string | null
           slogan?: string
           social_shares?: number | null
+          target_audience?: string | null
           theme?: string | null
           title?: string
           tone?: string | null
@@ -176,6 +191,51 @@ export type Database = {
           subscription_tier?: string | null
           target_audience?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          monthly_invoices_used: number | null
+          monthly_posters_used: number | null
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          usage_reset_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          monthly_invoices_used?: number | null
+          monthly_posters_used?: number | null
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          usage_reset_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          monthly_invoices_used?: number | null
+          monthly_posters_used?: number | null
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          usage_reset_date?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
