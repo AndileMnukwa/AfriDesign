@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,21 +84,26 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({
   initialData, 
   isEditMode = false 
 }) => {
-  const [formData, setFormData] = useState<EnhancedFormData>(
-    initialData || {
-      businessName: '',
-      industry: '',
-      services: '',
-      targetAudience: '',
-      brandPersonality: '',
-      culturalContext: '',
-      language: 'english',
-      customImages: []
-    }
-  );
+  const [formData, setFormData] = useState<EnhancedFormData>({
+    businessName: '',
+    industry: '',
+    services: '',
+    targetAudience: '',
+    brandPersonality: '',
+    culturalContext: '',
+    language: 'english',
+    customImages: []
+  });
 
   const [formStep, setFormStep] = useState(1);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Update form data when initialData prop changes
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const handleInputChange = (field: keyof EnhancedFormData, value: string | UploadedImage[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
