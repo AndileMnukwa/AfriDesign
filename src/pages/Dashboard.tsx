@@ -105,7 +105,7 @@ const Dashboard = () => {
         <header className="border-b bg-white/80 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <Link to="/" className="text-2xl font-bold text-gradient">
-              SmartBiz AI
+              AfriDesign
             </Link>
             <AuthButton />
           </div>
@@ -129,7 +129,7 @@ const Dashboard = () => {
       <header className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold text-gradient">
-            SmartBiz AI
+            AfriDesign
           </Link>
             <div className="flex items-center gap-4">
               <Link to="/premium">
