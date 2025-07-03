@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2, FileText } from "lucide-react";
+import { Eye, Trash2, FileText, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface InvoiceCardProps {
@@ -52,13 +52,19 @@ const InvoiceCard = ({ invoice, onDelete }: InvoiceCardProps) => {
               notes: invoice.notes,
               total: Number(invoice.total),
               invoiceNumber: invoice.invoice_number,
-              date: new Date(invoice.created_at).toLocaleDateString()
+              date: new Date(invoice.created_at).toLocaleDateString(),
+              invoiceId: invoice.id
             }}
             className="flex-1"
           >
             <Button size="sm" className="btn-professional w-full">
               <Eye className="w-4 h-4 mr-1" />
               View
+            </Button>
+          </Link>
+          <Link to={`/invoice/edit/${invoice.id}`}>
+            <Button size="sm" variant="outline" className="border-blue-200 text-blue-600 hover:text-blue-700 hover:border-blue-300">
+              <Edit className="w-4 h-4" />
             </Button>
           </Link>
           <Button 

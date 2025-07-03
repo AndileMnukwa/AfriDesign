@@ -1,13 +1,15 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, FileText, Calculator } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus, Trash2, FileText, Calculator, Save } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InvoiceItem {
   id: string;
@@ -18,6 +20,12 @@ interface InvoiceItem {
 
 const InvoiceGenerator = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { id } = useParams();
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [currentInvoiceId, setCurrentInvoiceId] = useState<string | null>(null);
+  
   const [businessInfo, setBusinessInfo] = useState({
     name: "",
     contact: "",
@@ -32,6 +40,45 @@ const InvoiceGenerator = () => {
     { id: "1", description: "", quantity: 1, price: 0 }
   ]);
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (id && user) {
+      setEditMode(true);
+      loadInvoice(id);
+    }
+  }, [id, user]);
+
+  const loadInvoice = async (invoiceId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) {
+        toast.error('Failed to load invoice');
+        navigate('/dashboard');
+        return;
+      }
+
+      if (data) {
+        setCurrentInvoiceId(data.id);
+        setBusinessInfo(data.business_info as any);
+        setClientInfo(data.client_info as any);
+        setItems(data.items as any);
+        setNotes(data.notes || "");
+      }
+    } catch (error) {
+      console.error('Error loading invoice:', error);
+      toast.error('Failed to load invoice');
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addItem = () => {
     const newItem: InvoiceItem = {
@@ -59,25 +106,78 @@ const InvoiceGenerator = () => {
     return items.reduce((total, item) => total + (item.quantity * item.price), 0);
   };
 
-  const handleGenerate = () => {
+  const saveInvoice = async () => {
+    if (!user) {
+      toast.error("Please sign in to save invoices");
+      navigate("/auth");
+      return;
+    }
+
     // Validation
     if (!businessInfo.name || !clientInfo.name || items.some(item => !item.description)) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Navigate to preview
-    navigate("/invoice-preview", {
-      state: {
-        businessInfo,
-        clientInfo,
-        items,
-        notes,
-        total: calculateTotal(),
-        invoiceNumber: `INV-${Date.now()}`,
-        date: new Date().toLocaleDateString()
+    try {
+      setLoading(true);
+      const invoiceData = {
+        user_id: user.id,
+        invoice_number: editMode ? currentInvoiceId : `INV-${Date.now()}`,
+        business_info: businessInfo as any,
+        client_info: clientInfo as any,
+        items: items as any,
+        notes: notes,
+        total: calculateTotal()
+      };
+
+      if (editMode && currentInvoiceId) {
+        // Update existing invoice
+        const { error } = await supabase
+          .from('invoices')
+          .update(invoiceData)
+          .eq('id', currentInvoiceId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+        toast.success("Invoice updated successfully!");
+      } else {
+        // Create new invoice
+        const { data, error } = await supabase
+          .from('invoices')
+          .insert(invoiceData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        setCurrentInvoiceId(data.id);
+        setEditMode(true);
+        toast.success("Invoice saved successfully!");
       }
-    });
+      
+      // Navigate to preview with the saved data
+      navigate("/invoice-preview", {
+        state: {
+          businessInfo,
+          clientInfo,
+          items,
+          notes,
+          total: calculateTotal(),
+          invoiceNumber: invoiceData.invoice_number,
+          date: new Date().toLocaleDateString(),
+          invoiceId: currentInvoiceId
+        }
+      });
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      toast.error("Failed to save invoice. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerate = () => {
+    saveInvoice();
   };
 
   return (
@@ -86,17 +186,19 @@ const InvoiceGenerator = () => {
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link to="/">
+            <Link to="/dashboard">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                Back to Dashboard
               </Button>
             </Link>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 gradient-nature rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gradient">Professional Invoice Generator</span>
+              <span className="text-xl font-bold text-gradient">
+                {editMode ? 'Edit Invoice' : 'Professional Invoice Generator'}
+              </span>
             </div>
           </div>
         </div>
@@ -278,14 +380,26 @@ const InvoiceGenerator = () => {
             </CardContent>
           </Card>
 
-          {/* Generate Button */}
-          <div className="flex justify-center">
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-4">
+            {editMode && (
+              <Button 
+                onClick={saveInvoice}
+                disabled={loading}
+                variant="outline"
+                className="text-lg px-8 py-6"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+            )}
             <Button 
               onClick={handleGenerate}
+              disabled={loading}
               className="gradient-nature hover:opacity-90 text-white border-0 text-lg px-12 py-6"
             >
               <Calculator className="w-5 h-5 mr-2" />
-              Generate Professional Invoice
+              {loading ? "Saving..." : editMode ? "Update & Preview" : "Generate Professional Invoice"}
             </Button>
           </div>
         </div>

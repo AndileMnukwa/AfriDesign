@@ -203,7 +203,10 @@ const InvoicePreview = () => {
                 Share via WhatsApp
               </Button>
 
-              <Link to="/invoice" className="block">
+              <Link 
+                to={invoiceData.invoiceId ? `/invoice/edit/${invoiceData.invoiceId}` : "/invoice"} 
+                className="block"
+              >
                 <Button 
                   variant="ghost"
                   className="w-full text-lg py-6 hover:bg-gray-100"

@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/poster-preview" element={<PosterPreview />} />
             <Route path="/premium" element={<PremiumPage />} />
             <Route path="/invoice" element={<InvoiceGenerator />} />
+            <Route path="/invoice/edit/:id" element={<InvoiceGenerator />} />
             <Route path="/invoice-preview" element={<InvoicePreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
