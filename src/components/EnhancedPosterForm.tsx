@@ -106,7 +106,16 @@ export const EnhancedPosterForm: React.FC<EnhancedPosterFormProps> = ({
   }, [initialData]);
 
   const handleInputChange = (field: keyof EnhancedFormData, value: string | UploadedImage[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Input sanitization for string fields
+    let sanitizedValue = value;
+    if (typeof value === 'string') {
+      // Remove potential XSS characters and limit length
+      sanitizedValue = value
+        .replace(/[<>\"'&]/g, '') // Remove potential XSS chars
+        .substring(0, field === 'services' ? 500 : 200); // Limit length based on field
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
     // Clear validation errors when user starts typing
     if (validationErrors.length > 0) {
       setValidationErrors([]);

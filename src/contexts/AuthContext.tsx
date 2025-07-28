@@ -52,27 +52,62 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    // Input validation and sanitization
+    const sanitizedEmail = email.trim().toLowerCase();
+    const sanitizedFullName = fullName?.trim().replace(/[<>\"'&]/g, '') || '';
+    
+    // Basic validation
+    if (!sanitizedEmail || !password) {
+      return { error: { message: 'Email and password are required' } };
+    }
+    
+    if (password.length < 6) {
+      return { error: { message: 'Password must be at least 6 characters long' } };
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(sanitizedEmail)) {
+      return { error: { message: 'Please enter a valid email address' } };
+    }
+    
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: sanitizedEmail,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: sanitizedFullName
+          }
         }
-      }
-    });
-    return { error };
+      });
+      return { error };
+    } catch (networkError) {
+      console.error('Network error during signup:', networkError);
+      return { error: { message: 'Network error. Please check your connection and try again.' } };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    return { error };
+    // Input validation and sanitization
+    const sanitizedEmail = email.trim().toLowerCase();
+    
+    if (!sanitizedEmail || !password) {
+      return { error: { message: 'Email and password are required' } };
+    }
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: sanitizedEmail,
+        password
+      });
+      return { error };
+    } catch (networkError) {
+      console.error('Network error during signin:', networkError);
+      return { error: { message: 'Network error. Please check your connection and try again.' } };
+    }
   };
 
   const signOut = async () => {
